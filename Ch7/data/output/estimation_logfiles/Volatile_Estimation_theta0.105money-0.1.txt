@@ -1,0 +1,488 @@
+>> clear
+>> dynare macrodata_dynare.mod
+
+Configuring Dynare ...
+[mex] Generalized QZ.
+[mex] Sylvester equation solution.
+[mex] Kronecker products.
+[mex] Sparse kronecker products.
+[mex] Local state space iteration (second order).
+[mex] Bytecode evaluation.
+[mex] k-order perturbation solver.
+[mex] k-order solution simulation.
+[mex] Quasi Monte-Carlo sequence (Sobol).
+[mex] Markov Switching SBVAR.
+
+Using 64-bit preprocessor
+Starting Dynare (version 2016-03-12).
+Starting preprocessing of the model file ...
+Found 21 equation(s).
+Evaluating expressions...done
+Computing static model derivatives:
+ - order 1
+Computing dynamic model derivatives:
+ - order 1
+ - order 2
+Processing outputs ...
+done
+Preprocessing completed.
+
+
+STEADY-STATE RESULTS:
+
+y   		 0
+m   		 0
+c   		 0
+pi  		 0
+i   		 0
+w   		 0
+n   		 0
+rl  		 0
+rd  		 0
+rk  		 0
+k   		 0
+q   		 0
+u   		 0
+b   		 0
+u_w 		 0
+u_p 		 0
+z   		 0
+a   		 0
+g   		 0
+v   		 0
+s   		 0
+
+EIGENVALUES:
+         Modulus             Real        Imaginary
+
+        4.36e-18        -4.36e-18                0
+             0.5              0.5                0
+             0.5              0.5                0
+             0.5              0.5                0
+             0.5              0.5                0
+             0.5              0.5                0
+             0.5              0.5                0
+             0.5              0.5                0
+          0.5022           0.5022                0
+          0.5221           0.5221                0
+          0.7848           0.7848                0
+          0.8198           0.7581           0.3118
+          0.8198           0.7581          -0.3118
+          0.9729           0.9729                0
+           1.044            1.044        0.0008186
+           1.044            1.044       -0.0008186
+           1.335            1.335                0
+           1.644            1.623           0.2648
+           1.644            1.623          -0.2648
+       1.924e+16        1.924e+16                0
+       4.028e+16       -4.028e+16                0
+       4.028e+16        4.028e+16                0
+
+
+There are 8 eigenvalue(s) larger than 1 in modulus 
+for 8 forward-looking variable(s)
+
+The rank condition is verified.
+
+
+
+
+
+Residuals of the static equations:
+
+Equation number 1 : 0
+Equation number 2 : 0
+Equation number 3 : 0
+Equation number 4 : 0
+Equation number 5 : 0
+Equation number 6 : 0
+Equation number 7 : 0
+Equation number 8 : 0
+Equation number 9 : 0
+Equation number 10 : 0
+Equation number 11 : 0
+Equation number 12 : 0
+Equation number 13 : 0
+Equation number 14 : 0
+Equation number 15 : 0
+Equation number 16 : 0
+Equation number 17 : 0
+Equation number 18 : 0
+Equation number 19 : 0
+Equation number 20 : 0
+Equation number 21 : 0
+
+
+Initial value of the log posterior (or likelihood): 785.9764
+                                            First-order      Norm of
+ Iter F-count            f(x)  Feasibility   optimality         step
+    0      24   -7.859764e+02    0.000e+00    1.273e+02
+    1      48   -8.231500e+02    0.000e+00    5.948e+02    1.906e+00
+    2      72   -8.384266e+02    0.000e+00    6.858e+02    2.084e+00
+    3      96   -8.969067e+02    0.000e+00    2.217e+02    1.099e+00
+    4     121   -8.985968e+02    0.000e+00    1.812e+02    2.498e-01
+    5     145   -9.189712e+02    0.000e+00    1.131e+03    5.927e-01
+    6     170   -9.361848e+02    0.000e+00    9.287e+02    5.296e-01
+    7     195   -9.758777e+02    0.000e+00    1.022e+03    6.110e-01
+    8     221   -9.889663e+02    0.000e+00    6.915e+02    3.531e-01
+    9     246   -1.013711e+03    0.000e+00    3.935e+02    1.605e+00
+   10     270   -1.025380e+03    0.000e+00    1.322e+03    2.129e+00
+   11     294   -1.059122e+03    0.000e+00    8.177e+02    3.764e-01
+   12     322   -1.072421e+03    0.000e+00    2.349e+03    7.913e-01
+   13     347   -1.075301e+03    0.000e+00    2.277e+03    3.321e-01
+   14     371   -1.085241e+03    0.000e+00    2.141e+03    1.712e+00
+   15     396   -1.096121e+03    0.000e+00    6.167e+02    3.363e-01
+   16     421   -1.109237e+03    0.000e+00    9.312e+02    3.171e-01
+   17     445   -1.123949e+03    0.000e+00    3.368e+03    1.534e+00
+   18     470   -1.125532e+03    0.000e+00    2.889e+03    3.490e-01
+   19     495   -1.128594e+03    0.000e+00    1.336e+03    6.077e-01
+   20     520   -1.130944e+03    0.000e+00    5.372e+02    1.717e-01
+   21     545   -1.145983e+03    0.000e+00    3.555e+02    4.957e-01
+   22     571   -1.148336e+03    0.000e+00    3.255e+02    1.758e-01
+   23     596   -1.152078e+03    0.000e+00    3.158e+02    2.928e+00
+   24     621   -1.157796e+03    0.000e+00    3.899e+02    1.303e+00
+   25     647   -1.160189e+03    0.000e+00    3.627e+02    7.028e-01
+   26     672   -1.165799e+03    0.000e+00    3.730e+02    3.883e-01
+   27     696   -1.172907e+03    0.000e+00    2.871e+03    1.258e+00
+   28     721   -1.176536e+03    0.000e+00    7.086e+02    4.175e-01
+   29     747   -1.181330e+03    0.000e+00    1.879e+02    7.516e-01
+   30     772   -1.183302e+03    0.000e+00    1.656e+02    2.889e-01
+
+                                            First-order      Norm of
+ Iter F-count            f(x)  Feasibility   optimality         step
+   31     797   -1.183635e+03    0.000e+00    2.478e+02    6.457e-01
+   32     822   -1.184121e+03    0.000e+00    2.115e+02    2.753e-01
+   33     848   -1.185126e+03    0.000e+00    2.298e+02    3.000e-01
+   34     873   -1.185146e+03    0.000e+00    2.192e+02    1.637e-01
+   35     898   -1.186922e+03    0.000e+00    2.119e+02    2.842e-01
+   36     924   -1.187276e+03    0.000e+00    1.743e+02    1.169e-01
+   37     950   -1.187739e+03    0.000e+00    1.386e+02    1.471e-01
+   38     974   -1.188266e+03    0.000e+00    8.553e+01    9.128e-02
+   39    1000   -1.188433e+03    0.000e+00    8.135e+01    4.113e-02
+   40    1026   -1.188467e+03    0.000e+00    9.831e+01    1.973e-02
+   41    1053   -1.188867e+03    0.000e+00    7.438e+01    9.508e-02
+   42    1078   -1.189145e+03    0.000e+00    8.645e+01    8.711e-02
+   43    1103   -1.189288e+03    0.000e+00    7.213e+01    1.057e-01
+   44    1127   -1.189660e+03    0.000e+00    4.507e+01    7.609e-02
+   45    1151   -1.189947e+03    0.000e+00    1.259e+02    8.034e-02
+   46    1177   -1.190057e+03    0.000e+00    1.042e+02    7.010e-02
+   47    1201   -1.190226e+03    0.000e+00    7.000e+01    5.573e-02
+   48    1225   -1.190335e+03    0.000e+00    4.635e+01    3.855e-02
+   49    1249   -1.190413e+03    0.000e+00    3.981e+01    3.000e-02
+   50    1273   -1.190431e+03    0.000e+00    3.558e+01    2.515e-02
+   51    1297   -1.190451e+03    0.000e+00    2.978e+01    2.718e-02
+   52    1321   -1.190471e+03    0.000e+00    2.071e+01    3.019e-02
+   53    1345   -1.190484e+03    0.000e+00    1.351e+01    1.324e-02
+   54    1369   -1.190493e+03    0.000e+00    1.024e+01    1.641e-02
+   55    1393   -1.190499e+03    0.000e+00    1.107e+01    1.684e-02
+   56    1417   -1.190503e+03    0.000e+00    7.968e+00    1.399e-02
+   57    1441   -1.190504e+03    0.000e+00    2.534e+00    8.096e-03
+   58    1465   -1.190516e+03    0.000e+00    2.383e+00    8.235e-03
+   59    1489   -1.190518e+03    0.000e+00    3.045e+00    6.131e-03
+   60    1513   -1.190519e+03    0.000e+00    1.233e+00    3.039e-03
+
+                                            First-order      Norm of
+ Iter F-count            f(x)  Feasibility   optimality         step
+   61    1537   -1.190519e+03    0.000e+00    1.967e+00    3.944e-03
+   62    1561   -1.190519e+03    0.000e+00    1.900e+00    2.039e-03
+   63    1585   -1.190520e+03    0.000e+00    9.539e-01    2.440e-03
+   64    1609   -1.190520e+03    0.000e+00    3.111e-01    1.259e-03
+   65    1633   -1.190520e+03    0.000e+00    4.157e-01    2.073e-03
+   66    1657   -1.190520e+03    0.000e+00    1.583e-01    6.618e-04
+   67    1681   -1.190520e+03    0.000e+00    2.797e-01    2.241e-03
+   68    1705   -1.190520e+03    0.000e+00    6.470e-01    2.597e-03
+   69    1729   -1.190520e+03    0.000e+00    1.458e-01    8.489e-04
+   70    1753   -1.190520e+03    0.000e+00    1.128e-01    4.905e-04
+   71    1778   -1.190520e+03    0.000e+00    1.101e-01    1.022e-04
+   72    1803   -1.190520e+03    0.000e+00    7.543e-02    2.378e-04
+   73    1827   -1.190520e+03    0.000e+00    1.679e-01    6.021e-04
+   74    1851   -1.190520e+03    0.000e+00    4.664e-02    2.418e-04
+   75    1877   -1.190520e+03    0.000e+00    3.674e-02    1.451e-04
+   76    1901   -1.190520e+03    0.000e+00    3.126e-02    1.846e-04
+   77    1931   -1.190520e+03    0.000e+00    1.309e-02    1.113e-04
+   78    1957   -1.190520e+03    0.000e+00    1.470e-01    7.080e-04
+   79    1981   -1.190520e+03    0.000e+00    1.187e+00    8.504e-04
+   80    2005   -1.190520e+03    0.000e+00    8.621e-02    2.849e-04
+   81    2030   -1.190520e+03    0.000e+00    3.517e-02    1.113e-04
+   82    2054   -1.190520e+03    0.000e+00    8.014e-02    1.664e-04
+   83    2078   -1.190520e+03    0.000e+00    3.397e-02    1.847e-04
+   84    2102   -1.190520e+03    0.000e+00    5.174e-02    2.470e-04
+   85    2126   -1.190520e+03    0.000e+00    2.226e-02    7.818e-05
+   86    2151   -1.190520e+03    0.000e+00    6.371e-02    1.285e-04
+   87    2175   -1.190520e+03    0.000e+00    4.249e-02    5.618e-05
+   88    2205   -1.190520e+03    0.000e+00    5.680e-03    6.931e-05
+   89    2230   -1.190520e+03    0.000e+00    2.196e-02    6.166e-05
+   90    2259   -1.190520e+03    0.000e+00    4.630e-02    8.919e-05
+
+                                            First-order      Norm of
+ Iter F-count            f(x)  Feasibility   optimality         step
+   91    2284   -1.190520e+03    0.000e+00    4.207e-02    4.502e-05
+   92    2309   -1.190520e+03    0.000e+00    5.028e-02    1.868e-04
+   93    2335   -1.190520e+03    0.000e+00    6.021e-02    2.757e-05
+   94    2363   -1.190520e+03    0.000e+00    7.938e-03    7.019e-05
+   95    2388   -1.190520e+03    0.000e+00    4.110e-02    7.210e-05
+   96    2413   -1.190520e+03    0.000e+00    4.014e-02    5.093e-05
+   97    2437   -1.190520e+03    0.000e+00    3.367e-02    1.922e-05
+   98    2462   -1.190520e+03    0.000e+00    3.841e-02    2.549e-05
+   99    2488   -1.190520e+03    0.000e+00    3.542e-02    1.472e-05
+  100    2518   -1.190520e+03    0.000e+00    3.070e-03    2.353e-05
+  101    2543   -1.190520e+03    0.000e+00    2.481e-02    7.428e-06
+  102    2573   -1.190520e+03    0.000e+00    6.699e-03    7.961e-06
+
+Local minimum possible. Constraints satisfied.
+
+fmincon stopped because the size of the current step is less than
+the selected value of the step size tolerance and constraints are 
+satisfied to within the default value of the constraint tolerance.
+
+<stopping criteria details>
+
+
+Final value of minus the log posterior (or likelihood):-1190.520377 
+
+RESULTS FROM POSTERIOR ESTIMATION
+parameters
+    prior mean     mode    s.d. prior pstdev
+
+rho_b   0.850   0.9257  0.0409 beta  0.1000 
+rho_z   0.850   0.9636  0.0044 beta  0.1000 
+rho_g   0.850   0.5537  0.0495 beta  0.1000 
+rho_p   0.850   0.4841  0.1088 beta  0.1000 
+rho_w   0.850   0.8506  0.0563 beta  0.1000 
+rho_a   0.850   0.9616  0.0053 beta  0.1000 
+rho_s   0.850   0.9752  0.0129 beta  0.1000 
+rho_v   0.850   0.9210  0.0818 beta  0.1000 
+xi_p    0.750   0.6521  0.0483 beta  0.1000 
+xi_w    0.750   0.7119  0.0347 beta  0.1000 
+sigma   2.500   4.2316  0.5305 gamm  0.5000 
+phi     0.750   0.3685  0.1923 gamm  0.5000 
+nu      3.000   2.8248  0.4495 gamm  0.5000 
+phi_i   0.150   0.0887  0.0205 norm  0.0250 
+phi_u   0.150   0.1545  0.0247 norm  0.0250 
+
+standard deviation of shocks
+    prior mean     mode    s.d. prior pstdev
+
+e_b     0.200   0.1047  0.0225 invg  2.0000 
+e_z     0.200   0.0259  0.0021 invg  2.0000 
+e_g     0.200   0.0338  0.0030 invg  2.0000 
+e_p     0.200   0.1082  0.0251 invg  2.0000 
+e_w     0.200   0.0856  0.0186 invg  2.0000 
+e_a     0.200   0.0876  0.0140 invg  2.0000 
+e_s     0.200   0.2016  0.0507 invg  2.0000 
+e_v     0.200   0.0925  0.0377 invg  2.0000 
+
+
+Log data density [Laplace approximation] is 1127.222369.
+
+Estimation::mcmc: Multiple chains mode.
+Estimation::mcmc: Old mh-files successfully erased!
+Estimation::mcmc: Old metropolis.log file successfully erased!
+Estimation::mcmc: Creation of a new metropolis.log file.
+Estimation::mcmc: Searching for initial values...
+Estimation::mcmc: Initial values found!
+
+Estimation::mcmc: Write details about the MCMC... Ok!
+Estimation::mcmc: Details about the MCMC are available in macrodata_dynare/metropolis\macrodata_dynare_mh_history_0.mat
+
+
+Estimation::mcmc: Number of mh files: 4 per block.
+Estimation::mcmc: Total number of generated files: 8.
+Estimation::mcmc: Total number of iterations: 20000.
+Estimation::mcmc: Current acceptance ratio per chain: 
+                                                       Chain  1: 53.7173%
+                                                       Chain  2: 56.1572%
+Estimation::mcmc::diagnostics: Univariate convergence diagnostic, Brooks and Gelman (1998):
+    Parameter 1...  Done! 
+    Parameter 2...  Done! 
+    Parameter 3...  Done! 
+    Parameter 4...  Done! 
+    Parameter 5...  Done! 
+    Parameter 6...  Done! 
+    Parameter 7...  Done! 
+    Parameter 8...  Done! 
+    Parameter 9...  Done! 
+    Parameter 10...  Done! 
+    Parameter 11...  Done! 
+    Parameter 12...  Done! 
+    Parameter 13...  Done! 
+    Parameter 14...  Done! 
+    Parameter 15...  Done! 
+    Parameter 16...  Done! 
+    Parameter 17...  Done! 
+    Parameter 18...  Done! 
+    Parameter 19...  Done! 
+    Parameter 20...  Done! 
+    Parameter 21...  Done! 
+    Parameter 22...  Done! 
+    Parameter 23...  Done! 
+
+Estimation::mcmc: Total number of MH draws per chain: 20000.
+Estimation::mcmc: Total number of generated MH files: 4.
+Estimation::mcmc: I'll use mh-files 1 to 4.
+Estimation::mcmc: In MH-file number 1 I'll start at line 4001.
+Estimation::mcmc: Finally I keep 16000 draws per chain.
+
+Estimation::marginal density: I'm computing the posterior mean and covariance...  Done!
+Estimation::marginal density: I'm computing the posterior log marginal density (modified harmonic mean)... Done!
+
+
+ESTIMATION RESULTS
+
+Log data density is 1126.975576.
+
+parameters
+        prior mean   post. mean        90% HPD interval    prior       pstdev
+
+rho_b        0.850       0.9266      0.8563      0.9842   beta        0.1000
+rho_z        0.850       0.9640      0.9350      0.9906   beta        0.1000
+rho_g        0.850       0.5551      0.4728      0.6424   beta        0.1000
+rho_p        0.850       0.5063      0.3222      0.7000   beta        0.1000
+rho_w        0.850       0.8442      0.7436      0.9458   beta        0.1000
+rho_a        0.850       0.9635      0.9498      0.9764   beta        0.1000
+rho_s        0.850       0.9515      0.9166      0.9949   beta        0.1000
+rho_v        0.850       0.8368      0.6878      0.9922   beta        0.1000
+xi_p         0.750       0.6631      0.5867      0.7349   beta        0.1000
+xi_w         0.750       0.7210      0.6670      0.7836   beta        0.1000
+sigma        2.500       4.4376      3.4978      5.3328   gamm        0.5000
+phi          0.750       0.4100      0.0901      0.6887   gamm        0.5000
+nu           3.000       2.8467      2.0531      3.5442   gamm        0.5000
+phi_i        0.150       0.0891      0.0510      0.1250   norm        0.0250
+phi_u        0.150       0.1543      0.1132      0.1982   norm        0.0250
+
+standard deviation of shocks
+        prior mean   post. mean        90% HPD interval    prior       pstdev
+
+e_b          0.200       0.1327      0.0821      0.1988   invg        2.0000
+e_z          0.200       0.0271      0.0236      0.0300   invg        2.0000
+e_g          0.200       0.0342      0.0291      0.0388   invg        2.0000
+e_p          0.200       0.1208      0.0755      0.1678   invg        2.0000
+e_w          0.200       0.0986      0.0589      0.1395   invg        2.0000
+e_a          0.200       0.0969      0.0667      0.1242   invg        2.0000
+e_s          0.200       0.1990      0.0812      0.2974   invg        2.0000
+e_v          0.200       0.1626      0.0527      0.2910   invg        2.0000
+Estimation::mcmc: Posterior (dsge) IRFs...
+Estimation::mcmc: Posterior IRFs, done!
+
+MODEL SUMMARY
+
+  Number of variables:         21
+  Number of stochastic shocks: 8
+  Number of state variables:   14
+  Number of jumpers:           8
+  Number of static variables:  4
+
+
+MATRIX OF COVARIANCE OF EXOGENOUS SHOCKS
+Variables         e_b       e_w       e_p       e_z       e_a       e_g       e_v       e_s
+e_b          0.017606  0.000000  0.000000  0.000000  0.000000  0.000000  0.000000  0.000000
+e_w          0.000000  0.009727  0.000000  0.000000  0.000000  0.000000  0.000000  0.000000
+e_p          0.000000  0.000000  0.014605  0.000000  0.000000  0.000000  0.000000  0.000000
+e_z          0.000000  0.000000  0.000000  0.000733  0.000000  0.000000  0.000000  0.000000
+e_a          0.000000  0.000000  0.000000  0.000000  0.009380  0.000000  0.000000  0.000000
+e_g          0.000000  0.000000  0.000000  0.000000  0.000000  0.001166  0.000000  0.000000
+e_v          0.000000  0.000000  0.000000  0.000000  0.000000  0.000000  0.026429  0.000000
+e_s          0.000000  0.000000  0.000000  0.000000  0.000000  0.000000  0.000000  0.039619
+
+POLICY AND TRANSITION FUNCTIONS
+                                   y               m               c              pi               i               w               n
+y(-1)                       0.034339        0.076335        0.038068        0.018392        0.028254        0.020318        0.057263
+m(-1)                       0.160749        0.893532        0.178066        0.082176        0.132494        0.095684        0.269998
+k(-1)                       0.067278        0.117470        0.106596       -0.112907        0.003128        0.225924       -0.628204
+u_w(-1)                    -0.028663       -0.021454       -0.017924        0.022109       -0.046183        0.101579       -0.063008
+u_p(-1)                    -0.020022       -0.048208       -0.013894        0.045645       -0.030020       -0.068262       -0.026175
+z(-1)                       0.229582        0.208257        0.205650       -0.210196        0.268628        0.424175       -1.334443
+g(-1)                       0.190629        0.423772        0.211332        0.102100        0.156849        0.112795        0.317892
+v(-1)                      -0.001699       -0.000791       -0.000396        0.000873       -0.003824       -0.002029       -0.004121
+s(-1)                       0.020035        0.005308        0.005429       -0.006647        0.043865        0.021714        0.044900
+pi(-1)                     -0.220041       -0.691648       -0.178888        0.648775       -0.287186       -0.155831       -0.364771
+i(-1)                       0.314113       -0.073372       -0.005927        0.038146        0.836283       -0.015110        0.522940
+w(-1)                      -0.041264       -0.072709       -0.024858        0.069850       -0.068032        0.596504       -0.148944
+b(-1)                       0.052446       -0.042571        0.139317        0.033933       -0.089290        0.082194        0.079792
+a(-1)                      -0.056975        0.024895        0.011475       -0.017452       -0.168657        0.021550       -0.102008
+e_b                         0.056598       -0.045941        0.150346        0.036620       -0.096359        0.088700        0.086109
+e_w                        -0.033952       -0.025413       -0.021232        0.026189       -0.054704        0.120322       -0.074635
+e_p                        -0.039547       -0.095219       -0.027443        0.090158       -0.059295       -0.134828       -0.051700
+e_z                         0.238167        0.216045        0.213340       -0.218056        0.278674        0.440038       -1.384346
+e_a                        -0.059135        0.025839        0.011910       -0.018114       -0.175051        0.022367       -0.105875
+e_g                         0.343385        0.763353        0.380680        0.183916        0.282536        0.203181        0.572628
+e_v                        -0.002030       -0.000945       -0.000473        0.001043       -0.004570       -0.002425       -0.004925
+e_s                         0.021057        0.005579        0.005706       -0.006986        0.046103        0.022822        0.047191
+
+
+THEORETICAL MOMENTS
+VARIABLE         MEAN  STD. DEV.   VARIANCE
+y              0.0000     0.2211     0.0489
+m              0.0000     0.2750     0.0756
+c              0.0000     0.0903     0.0082
+pi             0.0000     0.0438     0.0019
+i              0.0000     0.5073     0.2574
+w              0.0000     0.3030     0.0918
+n              0.0000     0.2240     0.0502
+
+
+
+VARIANCE DECOMPOSITION (in percent)
+         e_b     e_w     e_p     e_z     e_a     e_g     e_v     e_s
+y      25.61    4.54    1.43   25.92   32.22    1.09    0.01    9.18
+m      33.11    4.54    5.00   27.32   22.10    4.57    0.00    3.36
+c      25.03    4.31    2.46   40.40   17.88    4.73    0.01    5.19
+pi     14.79    5.58   22.16   11.78    5.95   38.80    0.01    0.92
+i      32.47    3.54    0.91   16.34   37.35    0.40    0.01    8.98
+w      17.25    2.71    2.27   46.30   21.81    0.36    0.01    9.29
+n      29.58    9.58    2.87   21.25   23.63    2.86    0.03   10.21
+
+CONDITIONAL VARIANCE DECOMPOSITION (in percent)
+Period 1:
+         e_b     e_w     e_p     e_z     e_a     e_g     e_v     e_s
+y      17.62    3.50    7.14   12.99   10.25   42.98    0.03    5.49
+m       4.14    0.70   14.76    3.81    0.70   75.75    0.00    0.14
+c      64.36    0.71    1.78    5.39    0.22   27.34    0.00    0.21
+pi     10.34    2.92   51.99   15.26    1.35   17.28    0.01    0.85
+i      21.34    3.80    6.70    7.43   37.52   12.15    0.07   10.99
+w      18.22   18.52   34.92   18.66    0.62    6.33    0.02    2.71
+n       5.92    2.46    1.77   63.70    4.77   17.35    0.03    4.00
+Period 10:
+         e_b     e_w     e_p     e_z     e_a     e_g     e_v     e_s
+y      26.77   10.71    5.16   26.17   17.78    3.93    0.04    9.46
+m      30.18    7.99   11.69   20.13   18.66   10.99    0.00    0.36
+c      36.17    7.28    6.38   30.49    6.07   13.12    0.00    0.48
+pi     14.00    4.91   23.31   11.87    4.29   40.91    0.01    0.69
+i      39.17    6.89    2.77   13.90   26.75    1.17    0.03    9.32
+w      10.78    8.99   13.16   55.84    3.95    2.07    0.02    5.18
+n      30.40   14.68    4.98   13.05   19.91    5.09    0.05   11.84
+Period 40:
+         e_b     e_w     e_p     e_z     e_a     e_g     e_v     e_s
+y      28.17    5.44    1.74   25.55   28.28    1.34    0.02    9.45
+m      34.61    5.81    7.04   24.81   19.92    6.49    0.00    1.32
+c      27.28    6.11    3.86   44.34    7.75    7.53    0.01    3.12
+pi     14.70    5.59   22.24   11.73    5.90   38.92    0.01    0.91
+i      35.01    3.93    1.01   15.52   34.92    0.44    0.02    9.16
+w      14.50    4.05    4.18   58.38    8.91    0.67    0.01    9.31
+n      30.50   11.24    3.45   17.11   23.08    3.47    0.03   11.11
+
+
+
+MATRIX OF CORRELATIONS
+Variables         y       m       c      pi       i       w       n
+y            1.0000  0.5840  0.5996  0.0607  0.9726  0.7003  0.2167
+m            0.5840  1.0000  0.7071  0.0493  0.4643  0.6945 -0.2191
+c            0.5996  0.7071  1.0000  0.1396  0.3971  0.8961 -0.4350
+pi           0.0607  0.0493  0.1396  1.0000  0.0291  0.0538  0.1462
+i            0.9726  0.4643  0.3971  0.0291  1.0000  0.5427  0.3749
+w            0.7003  0.6945  0.8961  0.0538  0.5427  1.0000 -0.4720
+n            0.2167 -0.2191 -0.4350  0.1462  0.3749 -0.4720  1.0000
+
+
+
+COEFFICIENTS OF AUTOCORRELATION
+Order         1       2       3       4       5
+y        0.9924  0.9768  0.9559  0.9319  0.9068
+m        0.9831  0.9435  0.8913  0.8355  0.7827
+c        0.9542  0.9052  0.8576  0.8147  0.7784
+pi       0.8834  0.6531  0.3895  0.1451 -0.0498
+i        0.9950  0.9817  0.9621  0.9379  0.9110
+w        0.9936  0.9805  0.9643  0.9470  0.9298
+n        0.9656  0.9155  0.8568  0.7954  0.7355
+Total computing time : 0h12m50s
+>> 
