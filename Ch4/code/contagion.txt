@@ -1,0 +1,83 @@
+/*初始化银行资本数据（STATA预处理）*/
+insheet using bankregulation2.csv,clear
+tostring stockid,replace
+replace stockid=substr("000000"+stockid,-9,6)
+tostring date,replace
+gen date2=date(date,"YMD")
+format date2 %td
+drop date
+rename date2 date
+label var date "日期"
+sort stockid date
+gen year=year(date)
+gen quarter=quarter(date)
+tostring year,gen(year2)
+tostring quarter,gen(quarter2)
+replace quarter2=substr("00"+quarter2,-2,2)
+gen yearqt=year2+quarter2
+drop date year2 quarter2
+order stockid stockname yearqt
+sort stockid yearqt
+
+keep if year>=2007
+keep if quarter==4
+keep stockid stockname rwa v12 year
+rename v12 corecar
+order stockid stockname year rwa corecar
+gen corecapital=rwa*corecar/100
+label var corecar "核心资本充足率"
+label var corecapital "核心资本"
+label var rwa "风险加权资产总额"
+merge m:1 stockname using stock_serialnumber.dta
+drop _merge
+order stockid stockname stock_serialnumber banktype year corecar rwa corecapital
+sort stock_serialnumber year
+save bankcapital,replace
+
+/*初始化银行间资产负债数据（STATA预处理）*/
+insheet using interbankdata.csv,clear
+merge m:1 stockname using stock_serialnumber.dta
+drop _merge
+tostring date,replace
+gen date2=date(date,"YMD")
+format date2 %td
+drop date
+rename date2 date
+label var date "日期"
+sort stockid date
+gen year=year(date)
+gen quarter=quarter(date)
+tostring year,gen(year2)
+tostring quarter,gen(quarter2)
+replace quarter2=substr("00"+quarter2,-2,2)
+gen yearqt=year2+quarter2
+drop date year2 quarter2
+order stockid stockname yearqt
+sort stockid yearqt
+
+
+keep if year>=2007
+keep if quarter==4
+keep stockid stockname stock_serialnumber banktype year total_asset total_liability asset_interbank liability_interbank
+order stockid stockname stock_serialnumber banktype year total_asset total_liability asset_interbank liability_interbank
+label var total_asset "总资产"
+label var total_liability "总负债"
+label var asset_interbank "银行间资产"
+label var liability_interbank "银行间负债"
+sort stock_serialnumber year
+save interbank,replace
+
+/*合并银行资本数据和银行间资产负债数据（STATA处理）*/
+use bankcapital,clear
+merge 1:1 stock_serialnumber year using interbank.dta
+drop _merge
+sort year stock_serialnumber
+egen id_year=group(year)
+by id_year,sort:egen asset_interbank_sum=sum(asset_interbank)
+by id_year,sort:egen liability_interbank_sum=sum(liability_interbank)
+by id_year,sort:gen asset_interbank_p=asset_interbank/asset_interbank_sum
+by id_year,sort:gen liability_interbank_p=liability_interbank/liability_interbank_sum
+drop id_year asset_interbank_sum liability_interbank_sum
+gsort -year stock_serialnumber
+save networkmodel,replace
+export excel using networkmodel.xls,replace firstrow(variables)
