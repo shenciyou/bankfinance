@@ -1,0 +1,45 @@
+/*生成SRISK排序数据集（STATA处理）*/
+use ses_dynamic,clear
+sort stockid yearqt date 
+egen id_yqt=group(stockid yearqt)
+by id_yqt,sort:egen srisk_quarterly=mean(srisk)
+duplicates drop id_yqt,force
+drop id_yqt
+sort yearqt stockid
+egen id_yqt=group(yearqt)
+by id_yqt,sort:egen srisk_sum=sum(srisk_quarterly)
+by id_yqt,sort:gen srisk_p=100*srisk_quarterly/srisk_sum
+gsort yearqt -srisk_p
+by id_yqt,sort:gen rank=_n
+save srisk_p,replace
+
+/*导出SRISK排序数据集（STATA处理，给EXCEL备用）*/
+use srisk_p,clear
+keep stockid stockname yearqt stock_serialnumber banktype id_yqt srisk_p rank
+destring yearqt,gen(yearqt2)
+gen year=int(yearqt2/100)
+keep if year>=2007
+drop if yearqt=="200701"
+keep if rank>=1 & rank<=10
+
+sort yearqt rank
+keep yearqt stockname srisk_p rank stock_serialnumber
+reshape wide stock_serialnumber stockname srisk_p,i(yearqt) j(rank)
+sort yearqt
+save srisk_results,replace
+export excel using srisk_results.xls,replace firstrow(variables)
+
+/*导出SRISK排序数据集（STATA处理，给EXCEL备用）*/
+use srisk_p,clear
+keep stockid stockname yearqt stock_serialnumber banktype id_yqt srisk_p rank
+destring yearqt,gen(yearqt2)
+gen year=int(yearqt2/100)
+keep if year>=2007
+drop if yearqt=="200701"
+
+sort yearqt stock_serialnumber
+keep yearqt stockname srisk_p rank stock_serialnumber
+reshape wide stockname rank srisk_p,i(yearqt) j(stock_serialnumber)
+sort yearqt
+save srisk_results_2,replace
+export excel using srisk_results2.xls,replace firstrow(variables)

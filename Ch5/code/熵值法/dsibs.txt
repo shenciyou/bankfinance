@@ -1,0 +1,119 @@
+/*初始化D-SIBs数据（STATA预处理）*/
+insheet using dsibs_1.csv,clear
+sort stockname date
+save dsibs_1,replace
+
+insheet using dsibs_2.csv,clear
+sort stockname date
+save dsibs_2,replace
+
+insheet using dsibs_3.csv,clear
+sort stockname date
+save dsibs_3,replace
+
+use dsibs_1,clear
+merge 1:1 stockname date using dsibs_2.dta
+drop _merge
+merge 1:1 stockname date using dsibs_3.dta
+drop _merge
+merge m:1 stockname using stock_serialnumber.dta
+drop _merge
+tostring date,replace
+gen date2=date(date,"YMD")
+format date2 %td
+drop date
+rename date2 date
+label var date "日期"
+gen year=year(date)
+order stockid stockname stock_serialnumber banktype year date total_asset total_liability asset_in_system liability_in_system ii nii oi held_for_trading available_for_sale deriv_finasset deriv_finliability ind_deposit
+sort stock_serialnumber year
+save dsibs,replace
+
+use dsibs,clear
+drop revenue corp_deposit ind_loan corp_loan
+save dsibs_for_matlab,replace
+
+
+/*分年导出的D-SIBs数据（STATA处理）*/
+forvalues i=1/8 {
+use dsibs_for_matlab,clear
+global k=`i'+2006
+keep if year==$k
+export excel using dsibs_$k.xls,replace firstrow(variables)
+}
+
+%%熵值法过程（Matlab处理）
+
+%%编写熵值法函数，命名为entropy_method.m
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [socre,weight]=entropy_method(data)
+[id,indexnum]=size(data);
+[mapdata,range_settings]=mapminmax(data');
+range_settings.ymin=0.002; %调整归一化后的最小值
+range_settings.ymax=0.996; %调整归一化后的最大值
+range_settings.yrange=range_settings.ymax-range_settings.ymin; %调整归一化后的极差
+data2=mapminmax(data',range_settings); %使用调整后的极差设定，重新对原数据进行归一化
+normaldata=data2'; %归一化后的数据
+%% 计算第j个指标下，第i个记录占该指标的比重p(i,j)
+for i=1:id
+    for j=1:indexnum
+        p(i,j)=normaldata(i,j)/sum(normaldata(:,j));
+    end
+end
+%% 计算第j个指标的熵值e(j)
+k=1/log(id);
+for j=1:indexnum
+    e(j)=-k*sum(p(:,j).*log(p(:,j)));
+end
+d=ones(1,indexnum)-e;  % 计算信息熵冗余度
+weight=d./sum(d);    % 求权值w
+score=weight*p';         % 求综合得分
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%使用熵值法批量处理D-SIBs数据
+clear
+for i=1:8
+k=i+2006;
+eval(['data=xlsread(''dsibs_',num2str(k),'.xls'',''Sheet1'',''G2:R17'');']);
+[score(i,:),weight(i,:)]=entropy_method(data);
+year(i)=k;
+end
+score=score';
+weight=weight';
+
+xlswrite('D-SIBs_result.xls', {'D-SIBs指标权重'},'Sheet1','A1');
+xlswrite('D-SIBs_result.xls', {'总资产'},'Sheet1','A2');
+xlswrite('D-SIBs_result.xls', {'总负债'},'Sheet1','A3');
+xlswrite('D-SIBs_result.xls', {'金融系统内资产'},'Sheet1','A4');
+xlswrite('D-SIBs_result.xls', {'金融系统内负债'},'Sheet1','A5');
+xlswrite('D-SIBs_result.xls', {'利息净收入'},'Sheet1','A6');
+xlswrite('D-SIBs_result.xls', {'手续费及佣金净收入'},'Sheet1','A7');
+xlswrite('D-SIBs_result.xls', {'其他经营净收益'},'Sheet1','A8');
+xlswrite('D-SIBs_result.xls', {'交易性金融资产'},'Sheet1','A9');
+xlswrite('D-SIBs_result.xls', {'可供出售金融资产'},'Sheet1','A10');
+xlswrite('D-SIBs_result.xls', {'衍生金融资产'},'Sheet1','A11');
+xlswrite('D-SIBs_result.xls', {'衍生金融负债'},'Sheet1','A12');
+xlswrite('D-SIBs_result.xls', {'居民储蓄存款'},'Sheet1','A13');
+xlswrite('D-SIBs_result.xls', year,'Sheet1','B1');
+xlswrite('D-SIBs_result.xls', weight,'Sheet1','B2');
+
+xlswrite('D-SIBs_result.xls', {'D-SIBs银行得分'},'Sheet2','A1');
+xlswrite('D-SIBs_result.xls', {'农业银行'},'Sheet2','A2');
+xlswrite('D-SIBs_result.xls', {'交通银行'},'Sheet2','A3');
+xlswrite('D-SIBs_result.xls', {'工商银行'},'Sheet2','A4');
+xlswrite('D-SIBs_result.xls', {'建设银行'},'Sheet2','A5');
+xlswrite('D-SIBs_result.xls', {'中国银行'},'Sheet2','A6');
+xlswrite('D-SIBs_result.xls', {'平安银行'},'Sheet2','A7');
+xlswrite('D-SIBs_result.xls', {'浦发银行'},'Sheet2','A8');
+xlswrite('D-SIBs_result.xls', {'华夏银行'},'Sheet2','A9');
+xlswrite('D-SIBs_result.xls', {'民生银行'},'Sheet2','A10');
+xlswrite('D-SIBs_result.xls', {'招商银行'},'Sheet2','A11');
+xlswrite('D-SIBs_result.xls', {'兴业银行'},'Sheet2','A12');
+xlswrite('D-SIBs_result.xls', {'光大银行'},'Sheet2','A13');
+xlswrite('D-SIBs_result.xls', {'中信银行'},'Sheet2','A14');
+xlswrite('D-SIBs_result.xls', {'宁波银行'},'Sheet2','A15');
+xlswrite('D-SIBs_result.xls', {'南京银行'},'Sheet2','A16');
+xlswrite('D-SIBs_result.xls', {'北京银行'},'Sheet2','A17');
+xlswrite('D-SIBs_result.xls', year,'Sheet2','B1');
+xlswrite('D-SIBs_result.xls', score,'Sheet2','B2');

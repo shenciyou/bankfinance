@@ -1,0 +1,3 @@
+
+cluster completelinkage x1-x5,  name(Cclust)
+cluster dendrogram Cclust, vertical labels(bankname2)
