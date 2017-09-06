@@ -1,7 +1,9 @@
 This is my project concerning bankfinance.
 
-主要的软件操作和程序代码见作者GitHub上的bankfinance项目：
+主要的程序代码和数据见作者GitHub上的bankfinance项目：
 https://github.com/shenciyou/bankfinance
+
+详细的软件操作和代码整合见项目操作手册文档：manual.docx
 
 主要的代码列表如下：
 第三章 系统性风险的测度
