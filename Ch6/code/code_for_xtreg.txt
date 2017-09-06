@@ -1,0 +1,262 @@
+//回归分析
+use paneldata,clear
+sort stockid yearqt
+gen Dummy2007=(year>2007)
+gen banktype2=(banktype==2)
+gen banktype3=(banktype==3)
+gen negativecycle=1 if cycle==0
+replace negativecycle=0 if cycle==1
+foreach v of varlist add wdd pdd rsquare deltacovar lerner acr4 ahhi rr m2_growth interbank_rate igap lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle {
+rename `v' `v'2
+winsor `v'2, gen(`v') p(0.01)
+drop `v'2
+}
+drop id num
+egen id=group(stockid)
+by id,sort:gen num=_n
+tsset id num
+gen lerner_acr4=lerner*acr4
+gen lerner_ahhi=lerner*ahhi
+gen lerner_rr=lerner*rr
+gen ahhi_igap=ahhi*igap
+gen ahhi_rr=ahhi*rr
+gen igap_rr=igap*rr
+gen igap_m2growth=igap*m2_growth
+gen igap_interbankrate=igap*interbank_rate
+gen lerner_igap=lerner*igap
+
+
+
+/*竞争对系统性风险的影响*/
+//PDD与竞争
+xi:reg pdd l.pdd l2.pdd lerner ahhi lerner_ahhi lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,rob
+est store OLS
+xtreg pdd l.pdd l2.pdd lerner ahhi lerner_ahhi lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE
+xi:xtabond2 pdd l.pdd l2.pdd lerner ahhi lerner_ahhi lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle, gmm(lerner, laglimits(1 .)) iv(i.id i.year) noleveleq robust small
+est store DIFGMM
+xi:xtabond2 pdd l.pdd l2.pdd lerner ahhi lerner_ahhi lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle, gmm(lerner, laglimits(1 .)) twostep robust small
+est store SYSGMM
+outreg2 [OLS FE DIFGMM SYSGMM] using pdd_lerner.doc,bdec(4) replace word
+
+//Rsquare与竞争
+xi:reg rsquare l.rsquare l2.rsquare lerner ahhi lerner_ahhi lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,rob
+est store OLS
+xtreg rsquare l.rsquare l2.rsquare lerner ahhi lerner_ahhi lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE
+xi:xtabond2 rsquare l.rsquare l2.rsquare lerner ahhi lerner_ahhi lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle, gmm(lerner, laglimits(1 .)) iv(i.id i.year) noleveleq robust small
+est store DIFGMM
+xi:xtabond2 rsquare l.rsquare l2.rsquare lerner ahhi lerner_ahhi lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle, gmm(lerner, laglimits(1 .)) iv(i.id i.year) robust small
+est store SYSGMM
+outreg2 [OLS FE DIFGMM SYSGMM] using rsquare_lerner.doc,bdec(4) replace word
+
+//DeltaCoVaR与竞争
+xi:reg deltacovar l.deltacovar l2.deltacovar lerner ahhi lerner_ahhi lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,rob
+est store OLS
+xtreg deltacovar l.deltacovar l2.deltacovar lerner ahhi lerner_ahhi lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE
+xi:xtabond2 deltacovar l.deltacovar l2.deltacovar lerner ahhi lerner_ahhi lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle, gmm(lerner, laglimits(1 .)) iv(i.id i.year) noleveleq robust small
+est store DIFGMM
+xi:xtabond2 deltacovar l.deltacovar l2.deltacovar lerner ahhi lerner_ahhi lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle, gmm(lerner, laglimits(1 .)) iv(i.id i.year) twostep robust small
+est store SYSGMM
+outreg2 [OLS FE DIFGMM SYSGMM] using deltacovar_lerner.doc,bdec(4) replace word
+
+/*货币政策对系统性风险的影响*/
+//PDD与货币政策
+xi:reg pdd l.pdd l2.pdd igap rr igap_rr lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,rob
+est store OLS
+xtreg pdd l.pdd l2.pdd igap rr igap_rr lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE
+xi:xtabond2 pdd l.pdd l2.pdd igap rr igap_rr lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle, gmm(igap, laglimits(0 .)) iv(i.id i.year) noleveleq robust small
+est store DIFGMM
+xi:xtabond2 pdd l.pdd l2.pdd igap rr igap_rr lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle, gmm(igap, laglimits(0 .)) iv(i.id i.year) robust small
+est store SYSGMM
+outreg2 [OLS FE DIFGMM SYSGMM] using pdd_igap.doc,bdec(4) replace word
+
+//Rsquare与货币政策
+xi:reg rsquare l.rsquare l2.rsquare igap rr igap_rr lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,rob
+est store OLS
+xtreg rsquare l.rsquare l2.rsquare igap rr igap_rr lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE
+xi:xtabond2 rsquare l.rsquare l2.rsquare igap rr igap_rr lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle, gmm(igap, laglimits(0 .)) iv(i.id i.year) noleveleq robust small
+est store DIFGMM
+xi:xtabond2 rsquare l.rsquare l2.rsquare igap rr igap_rr lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle, gmm(igap, laglimits(0 .)) robust small
+est store SYSGMM
+outreg2 [OLS FE DIFGMM SYSGMM] using rsquare_igap.doc,bdec(4) replace word
+
+//DeltaCoVaR与货币政策
+xi:reg deltacovar l.deltacovar l2.deltacovar igap rr igap_rr lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,rob
+est store OLS
+xtreg deltacovar l.deltacovar l2.deltacovar igap rr igap_rr lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE
+xi:xtabond2 deltacovar l.deltacovar l2.deltacovar igap rr igap_rr lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle, gmm(igap, laglimits(0 .)) iv(i.id i.year) noleveleq robust small
+est store DIFGMM
+xi:xtabond2 deltacovar l.deltacovar l2.deltacovar igap rr igap_rr lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle, gmm(igap, laglimits(0 .)) robust small
+est store SYSGMM
+outreg2 [OLS FE DIFGMM SYSGMM] using deltacovar_igap.doc,bdec(4) replace word
+
+/*竞争、货币政策对系统性风险的影响*/
+//PDD与所有变量
+xi:reg pdd l.pdd l2.pdd lerner ahhi igap rr lerner_ahhi lerner_igap lerner_rr ahhi_igap ahhi_rr igap_rr lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,rob
+est store OLS
+xtreg pdd l.pdd l2.pdd lerner ahhi igap rr lerner_ahhi lerner_igap lerner_rr ahhi_igap ahhi_rr igap_rr lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE
+xi:xtabond2 pdd l.pdd l2.pdd lerner ahhi igap rr lerner_ahhi lerner_igap lerner_rr ahhi_igap ahhi_rr igap_rr lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle, gmm(lerner, laglimits(1 .)) gmm(igap, laglimits(0 .)) iv(i.id i.year) noleveleq robust small
+est store DIFGMM
+xi:xtabond2 pdd l.pdd l2.pdd lerner ahhi igap rr lerner_ahhi lerner_igap lerner_rr ahhi_igap ahhi_rr igap_rr lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle, gmm(lerner, laglimits(1 .)) gmm(igap, laglimits(0 .)) iv(i.id i.year) robust small
+est store SYSGMM
+outreg2 [OLS FE DIFGMM SYSGMM] using pdd_lerner_igap.doc,bdec(4) replace word
+
+//Rsquare与所有变量
+xi:reg rsquare l.rsquare l2.rsquare lerner ahhi igap rr lerner_ahhi lerner_igap lerner_rr ahhi_igap ahhi_rr igap_rr lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,rob
+est store OLS
+xtreg rsquare l.rsquare l2.rsquare lerner ahhi igap rr lerner_ahhi lerner_igap lerner_rr ahhi_igap ahhi_rr igap_rr lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE
+xi:xtabond2 rsquare l.rsquare l2.rsquare lerner ahhi igap rr lerner_ahhi lerner_igap lerner_rr ahhi_igap ahhi_rr igap_rr lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle, gmm(lerner, laglimits(1 .)) gmm(igap, laglimits(0 .)) iv(i.id i.year) noleveleq robust small
+est store DIFGMM
+xi:xtabond2 rsquare l.rsquare l2.rsquare lerner ahhi igap rr lerner_ahhi lerner_igap lerner_rr ahhi_igap ahhi_rr igap_rr lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle, gmm(lerner, laglimits(1 .)) gmm(igap, laglimits(0 .)) iv(i.id i.year) robust small
+est store SYSGMM
+outreg2 [OLS FE DIFGMM SYSGMM] using rsquare_lerner_igap.doc,bdec(4) replace word
+
+//DeltaCoVaR与所有变量
+xi:reg deltacovar l.deltacovar l2.deltacovar lerner ahhi igap rr lerner_ahhi lerner_igap lerner_rr ahhi_igap ahhi_rr igap_rr lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,rob
+est store OLS
+xtreg deltacovar l.deltacovar l2.deltacovar lerner ahhi igap rr lerner_ahhi lerner_igap lerner_rr ahhi_igap ahhi_rr igap_rr lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE
+xi:xtabond2 deltacovar l.deltacovar l2.deltacovar lerner ahhi igap rr lerner_ahhi lerner_igap lerner_rr ahhi_igap ahhi_rr igap_rr lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle, gmm(lerner, laglimits(1 .)) gmm(igap, laglimits(0 .)) iv(i.id i.year) noleveleq robust small
+est store DIFGMM
+xi:xtabond2 deltacovar l.deltacovar l2.deltacovar lerner ahhi igap rr lerner_ahhi lerner_igap lerner_rr ahhi_igap ahhi_rr igap_rr lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle, gmm(lerner, laglimits(1 .)) gmm(igap, laglimits(0 .)) iv(i.id i.year) robust small
+est store SYSGMM
+outreg2 [OLS FE DIFGMM SYSGMM] using deltacovar_lerner_igap.doc,bdec(4) replace word
+
+
+/*竞争、货币政策对系统性风险的影响(约化)*/
+//PDD、Lerner和IGAP
+xi:reg pdd l.pdd l2.pdd lerner igap lerner_igap lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,rob
+est store OLS
+xtreg pdd l.pdd l2.pdd lerner igap lerner_igap lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE
+xi:xtabond2 pdd l.pdd l2.pdd lerner igap lerner_igap lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle, gmm(lerner, laglimits(1 .)) gmm(igap, laglimits(0 .)) iv(i.id i.year) noleveleq robust small
+est store DIFGMM
+xi:xtabond2 pdd l.pdd l2.pdd lerner igap lerner_igap lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle, gmm(lerner, laglimits(1 .)) gmm(igap, laglimits(0 .)) iv(i.id i.year) robust small
+est store SYSGMM
+outreg2 [OLS FE DIFGMM SYSGMM] using pdd_lerner_igap_reduced.doc,bdec(4) replace word
+
+//Rsquare、Lerner和IGAP
+xi:reg rsquare l.rsquare l2.rsquare lerner igap lerner_igap lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,rob
+est store OLS
+xtreg rsquare l.rsquare l2.rsquare lerner igap lerner_igap lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE
+xi:xtabond2 rsquare l.rsquare l2.rsquare lerner igap lerner_igap lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle, gmm(lerner, laglimits(1 .)) gmm(igap, laglimits(0 .)) iv(i.id i.year) noleveleq robust small
+est store DIFGMM
+xi:xtabond2 rsquare l.rsquare l2.rsquare lerner igap lerner_igap lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle, gmm(lerner, laglimits(1 .)) gmm(igap, laglimits(0 .)) iv(i.id i.year) robust small
+est store SYSGMM
+outreg2 [OLS FE DIFGMM SYSGMM] using rsquare_lerner_igap_reduced.doc,bdec(4) replace word
+
+//Deltacovar、Lerner和IGAP
+xi:reg deltacovar l.deltacovar l2.deltacovar lerner igap lerner_igap lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,rob
+est store OLS
+xtreg deltacovar l.deltacovar l2.deltacovar lerner igap lerner_igap lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE
+xi:xtabond2 deltacovar l.deltacovar l2.deltacovar lerner igap lerner_igap lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle, gmm(lerner, laglimits(1 .)) gmm(igap, laglimits(0 .)) iv(i.id i.year) noleveleq robust small
+est store DIFGMM
+xi:xtabond2 deltacovar l.deltacovar l2.deltacovar lerner igap lerner_igap lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle, gmm(lerner, laglimits(1 .)) gmm(igap, laglimits(0 .)) iv(i.id i.year) robust small
+est store SYSGMM
+outreg2 [OLS FE DIFGMM SYSGMM] using deltacovar_lerner_igap_reduced.doc,bdec(4) replace word
+
+
+
+/*稳健性检验*/
+
+//不同银行分类对系统性风险的影响
+xtreg pdd l.pdd l2.pdd lerner igap lerner_igap c.lerner##banktype2 c.lerner##banktype3 lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE1
+xtreg pdd l.pdd l2.pdd lerner igap lerner_igap c.igap##banktype2 c.igap##banktype3 lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE2
+xtreg pdd l.pdd l2.pdd lerner igap lerner_igap c.lerner_igap##banktype2 c.lerner_igap##banktype3 lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE3
+xtreg pdd l.pdd l2.pdd lerner igap lerner_igap c.lerner##banktype2 c.lerner##banktype3 c.igap##banktype2 c.igap##banktype3 c.lerner_igap##banktype2 c.lerner_igap##banktype3 lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE4
+outreg2 [FE1 FE2 FE3 FE4] using pdd_banktype.doc,bdec(4) replace word
+
+xtreg rsquare l.rsquare l2.rsquare lerner igap lerner_igap c.lerner##banktype2 c.lerner##banktype3 lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE1
+xtreg rsquare l.rsquare l2.rsquare lerner igap lerner_igap c.igap##banktype2 c.igap##banktype3 lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE2
+xtreg rsquare l.rsquare l2.rsquare lerner igap lerner_igap c.lerner_igap##banktype2 c.lerner_igap##banktype3 lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE3
+xtreg rsquare l.rsquare l2.rsquare lerner igap lerner_igap c.lerner##banktype2 c.lerner##banktype3 c.igap##banktype2 c.igap##banktype3 c.lerner_igap##banktype2 c.lerner_igap##banktype3 lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE4
+outreg2 [FE1 FE2 FE3 FE4] using rsquare_banktype.doc,bdec(4) replace word
+
+xtreg deltacovar l.deltacovar l2.deltacovar lerner igap lerner_igap c.lerner##banktype2 c.lerner##banktype3 lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE1
+xtreg deltacovar l.deltacovar l2.deltacovar lerner igap lerner_igap c.igap##banktype2 c.igap##banktype3 lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE2
+xtreg deltacovar l.deltacovar l2.deltacovar lerner igap lerner_igap c.lerner_igap##banktype2 c.lerner_igap##banktype3 lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE3
+xtreg deltacovar l.deltacovar l2.deltacovar lerner igap lerner_igap c.lerner##banktype2 c.lerner##banktype3 c.igap##banktype2 c.igap##banktype3 c.lerner_igap##banktype2 c.lerner_igap##banktype3 lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE4
+outreg2 [FE1 FE2 FE3 FE4] using deltacovar_banktype.doc,bdec(4) replace word
+
+//金融危机对系统性风险的影响
+xtreg pdd l.pdd l2.pdd lerner igap lerner_igap c.lerner##Dummy2007 lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE1
+xtreg pdd l.pdd l2.pdd lerner igap lerner_igap c.igap##Dummy2007 lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE2
+xtreg pdd l.pdd l2.pdd lerner igap lerner_igap c.lerner_igap##Dummy2007 lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE3
+xtreg pdd l.pdd l2.pdd lerner igap lerner_igap c.lerner##Dummy2007 c.igap##Dummy2007 c.lerner_igap##Dummy2007 lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE4
+outreg2 [FE1 FE2 FE3 FE4] using pdd_crisis.doc,bdec(4) replace word
+
+xtreg rsquare l.rsquare l2.rsquare lerner igap lerner_igap c.lerner##Dummy2007 lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE1
+xtreg rsquare l.rsquare l2.rsquare lerner igap lerner_igap c.igap##Dummy2007 lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE2
+xtreg rsquare l.rsquare l2.rsquare lerner igap lerner_igap c.lerner_igap##Dummy2007 lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE3
+xtreg rsquare l.rsquare l2.rsquare lerner igap lerner_igap c.lerner##Dummy2007 c.igap##Dummy2007 c.lerner_igap##Dummy2007 lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE4
+outreg2 [FE1 FE2 FE3 FE4] using rsquare_crisis.doc,bdec(4) replace word
+
+xtreg deltacovar l.deltacovar l2.deltacovar lerner igap lerner_igap c.lerner##Dummy2007 lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE1
+xtreg deltacovar l.deltacovar l2.deltacovar lerner igap lerner_igap c.igap##Dummy2007 lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE2
+xtreg deltacovar l.deltacovar l2.deltacovar lerner igap lerner_igap c.lerner_igap##Dummy2007 lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE3
+xtreg deltacovar l.deltacovar l2.deltacovar lerner igap lerner_igap c.lerner##Dummy2007 c.igap##Dummy2007 c.lerner_igap##Dummy2007 lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE4
+outreg2 [FE1 FE2 FE3 FE4] using deltacovar_crisis.doc,bdec(4) replace word
+
+//监管压力对系统性风险的影响
+xtreg pdd l.pdd l2.pdd lerner igap lerner_igap c.lerner##c.regulation lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE1
+xtreg pdd l.pdd l2.pdd lerner igap lerner_igap c.igap##c.regulation lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE2
+xtreg pdd l.pdd l2.pdd lerner igap lerner_igap c.lerner_igap##c.regulation lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE3
+xtreg pdd l.pdd l2.pdd lerner igap lerner_igap c.lerner##c.regulation c.igap##c.regulation c.lerner_igap##c.regulation lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE4
+outreg2 [FE1 FE2 FE3 FE4] using pdd_regulation.doc,bdec(4) replace word
+
+xtreg rsquare l.rsquare l2.rsquare lerner igap lerner_igap c.lerner##c.regulation lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE1
+xtreg rsquare l.rsquare l2.rsquare lerner igap lerner_igap c.igap##c.regulation lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE2
+xtreg rsquare l.rsquare l2.rsquare lerner igap lerner_igap c.lerner_igap##c.regulation lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE3
+xtreg rsquare l.rsquare l2.rsquare lerner igap lerner_igap c.lerner##c.regulation c.igap##c.regulation c.lerner_igap##c.regulation lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE4
+outreg2 [FE1 FE2 FE3 FE4] using rsquare_regulation.doc,bdec(4) replace word
+
+xtreg deltacovar l.deltacovar l2.deltacovar lerner igap lerner_igap c.lerner##c.regulation lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE1
+xtreg deltacovar l.deltacovar l2.deltacovar lerner igap lerner_igap c.igap##c.regulation lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE2
+xtreg deltacovar l.deltacovar l2.deltacovar lerner igap lerner_igap c.lerner_igap##c.regulation lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE3
+xtreg deltacovar l.deltacovar l2.deltacovar lerner igap lerner_igap c.lerner##c.regulation c.igap##c.regulation c.lerner_igap##c.regulation lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle i.id i.year,fe
+est store FE4
+outreg2 [FE1 FE2 FE3 FE4] using deltacovar_regulation.doc,bdec(4) replace word

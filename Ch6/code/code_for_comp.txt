@@ -1,0 +1,435 @@
+//初始化利率宏观变量
+insheet using rate.csv,clear
+destring hs300,replace force
+replace hs300=. if hs300==-1
+tostring date,replace
+gen date2=date(date,"YMD")
+format date2 %td
+drop date
+rename date2 date
+label var date "日期"
+gen year=year(date)
+gen quarter=quarter(date)
+tostring year,gen(year2)
+tostring quarter,gen(quarter2)
+replace quarter2=substr("00"+quarter2,-2,2)
+gen yearqt=year2+quarter2
+drop year quarter year2 quarter2
+drop if yearqt==".0."
+sort yearqt date
+gen id=_n
+tsset id
+gen lag_term=l.term
+gen lag_def=l.def
+gen lag_hs300=l.hs300
+gen lag_rate=l.rate
+drop if id==1
+drop id
+save rate,replace
+
+//生成16个deltadd变量
+use DD_daily,clear
+sort stockid date
+drop id
+egen id=group(stockid)
+by id,sort:gen time=_n
+tsset id time
+gen deltadd=d.dd
+keep date stock_serialnumber deltadd
+sort date stock_serialnumber
+reshape wide deltadd,i(date) j(stock_serialnumber)
+save deltadd_by_stock,replace
+
+//merge利率宏观变量
+use deltadd_by_stock,clear
+gen year=year(date)
+gen quarter=quarter(date)
+tostring year,gen(year2)
+tostring quarter,gen(quarter2)
+replace quarter2=substr("00"+quarter2,-2,2)
+gen yearqt=year2+quarter2
+drop year quarter year2 quarter2
+order date yearqt
+egen sumdeltadd=rowtotal(deltadd*) 
+sort yearqt date
+merge 1:1 yearqt date using rate.dta
+drop if _merge==2
+drop _merge
+egen nonmisscount=rownonmiss(deltadd*)
+drop if nonmisscount==0
+save deltadd_by_stock,replace
+
+//计算rsquare
+use deltadd_by_stock,clear
+forvalues i=1/16 {
+gen sumdeltadd_except`i'=sumdeltadd-deltadd`i'
+replace sumdeltadd_except`i'=sumdeltadd_except`i'/(nonmisscount-1)
+egen nonmisscount_`i'=rownonmiss(deltadd`i' sumdeltadd_except`i')
+}
+sort yearqt
+egen id=group(yearqt)
+egen idmax=max(id)
+global idmax=idmax
+matrix rsquare=J($idmax,16,.)
+set more off
+forvalues i=1/16 {
+forvalues j=1/$idmax {
+
+egen tempcount=mean(nonmisscount_`i') if id==`j'
+egen count=mean(tempcount)
+local count=count
+drop tempcount count
+if  `count'==2 {
+reg deltadd`i' sumdeltadd_except`i' if id==`j'
+matrix rsquare[`j',`i']=e(r2)
+}
+}
+}
+matrix list rsquare
+drop *
+svmat double rsquare
+forvalues i=1/16 {
+replace rsquare`i'=ln(rsquare`i'/(1-rsquare`i'))
+}
+gen id=_n
+reshape long rsquare,i(id) j(stock_serialnumber)
+sort id stock_serialnumber
+save rsquare,replace
+
+//计算betasystem，采取的分位数点为0.1
+use deltadd_by_stock,clear
+
+forvalues i=1/16 {
+egen corenonmisscount_`i'=rownonmiss(deltadd`i' sumdeltadd)
+egen nonmisscount_`i'=rownonmiss(deltadd`i' sumdeltadd term def hs300 rate)
+}
+
+
+sort yearqt
+egen id=group(yearqt)
+egen idmax=max(id)
+global idmax=idmax
+global percentile=50
+matrix beta=J($idmax,16,.)
+matrix temp=J(6,1,.)
+set more off
+forvalues i=1/16 {
+forvalues j=1/$idmax {
+
+egen tempcount=mean(nonmisscount_`i') if id==`j'
+egen count=mean(tempcount)
+local count=count
+egen tempcorecount=mean(corenonmisscount_`i') if id==`j'
+egen corecount=mean(tempcorecount)
+local corecount=corecount
+drop tempcount tempcorecount count corecount
+if `corecount'==2 & `count'!=2{
+qreg sumdeltadd deltadd`i' lag_term lag_def lag_hs300 lag_rate if id==`j',q(0.5)
+matrix temp=e(b)
+matrix beta[`j',`i']=temp[1,1]
+}
+}
+}
+
+matrix list beta
+drop *
+svmat double beta
+gen id=_n
+save betapercentile,replace
+
+//计算deltacovar
+use deltadd_by_stock,clear
+sort yearqt
+egen id=group(yearqt)
+forvalues i=1/16 {
+by id,sort:egen p10_deltadd`i'=pctile(deltadd`i'),p(10)
+by id,sort:egen p50_deltadd`i'=pctile(deltadd`i'),p(50)
+by id,sort:gen p1050_deltadd`i'=p10_deltadd`i'-p50_deltadd`i'
+}
+duplicates drop id,force
+merge 1:1 id using betapercentile
+drop _merge
+keep yearqt id p1050_deltadd* beta*
+forvalues i=1/16 {
+gen deltacovar`i'=beta`i'*p1050_deltadd`i'
+}
+keep id deltacovar*
+reshape long deltacovar,i(id) j(stock_serialnumber)
+sort id stock_serialnumber
+save deltacovar,replace
+
+*************BEGIN HERE
+
+/*COMP数据合并*/
+//四个COMP数据初始化
+insheet using comp1.csv,clear
+tostring stockid,replace
+replace stockid=substr("000000"+stockid,-9,6)
+tostring date,replace
+gen date2=date(date,"YMD")
+format date2 %td
+drop date
+rename date2 date
+label var date "日期"
+destring revenue,replace ignore(",") force
+destring interestincome,replace ignore(",") force
+destring interestexpense,replace ignore(",") force
+destring noninterestexpense,replace ignore(",") force
+destring adminexpense,replace ignore(",") force
+gen tc=interestexpense+noninterestexpense+adminexpense
+label var tc "银行总成本"
+order stockid stockname date
+sort stockid date
+save comp1.dta,replace
+
+insheet using comp2.csv,clear
+tostring stockid,replace
+replace stockid=substr("000000"+stockid,-9,6)
+tostring date,replace
+gen date2=date(date,"YMD")
+format date2 %td
+drop date
+rename date2 date
+label var date "日期"
+order stockid stockname date
+sort stockid date
+save comp2.dta,replace
+
+insheet using comp3.csv,clear
+tostring stockid,replace
+replace stockid=substr("000000"+stockid,-9,6)
+tostring date,replace
+gen date2=date(date,"YMD")
+format date2 %td
+drop date
+rename date2 date
+label var date "日期"
+order stockid stockname date
+sort stockid date
+save comp3.dta,replace
+
+insheet using comp4.csv,clear
+tostring stockid,replace
+replace stockid=substr("000000"+stockid,-9,6)
+tostring date,replace
+gen date2=date(date,"YMD")
+format date2 %td
+drop date
+rename date2 date
+label var date "日期"
+order stockid stockname date
+sort stockid date
+save comp4.dta,replace
+
+insheet using comp5.csv,clear
+tostring date,replace
+gen date2=date(date,"YMD")
+format date2 %td
+drop date
+rename date2 date
+label var date "日期"
+gen year=year(date)
+gen quarter=quarter(date)
+tostring year,gen(year2)
+tostring quarter,gen(quarter2)
+replace quarter2=substr("00"+quarter2,-2,2)
+gen yearqt=year2+quarter2
+drop year2 quarter2
+drop date year quarter
+order yearqt
+sort yearqt
+save comp5.dta,replace
+
+insheet using comp6.csv,clear
+tostring date,replace
+gen date2=date(date,"YM")
+format date2 %td
+drop date
+rename date2 date
+label var date "日期"
+gen year=year(date)
+gen month=month(date)
+gen quarter=quarter(date)
+keep if month==3|month==6|month==9|month==12
+tostring year,gen(year2)
+tostring quarter,gen(quarter2)
+replace quarter2=substr("00"+quarter2,-2,2)
+gen yearqt=year2+quarter2
+drop year2 quarter2
+drop date year month quarter
+order yearqt
+sort yearqt
+save comp6.dta,replace
+
+//补全COMP3数据
+use comp2,clear
+merge 1:1 stockid date using comp3.dta
+drop _merge
+export excel using comp3_add.xlsx,replace firstrow(variables)
+
+insheet using comp3_add.csv,clear
+tostring stockid,replace
+replace stockid=substr("000000"+stockid,-6,6)
+tostring date,replace
+gen date2=date(date,"YMD")
+format date2 %td
+drop date
+rename date2 date
+label var date "日期"
+order stockid date
+sort stockid date
+save comp3_add.dta,replace
+
+//合并前四个数据
+use comp2,clear
+merge 1:1 stockid date using comp1.dta
+drop _merge
+sort stockid date
+merge 1:1 stockid date using comp3_add.dta
+drop _merge
+sort stockid date
+merge 1:1 stockid date using comp4.dta
+drop _merge
+
+gen year=year(date)
+gen quarter=quarter(date)
+tostring year,gen(year2)
+tostring quarter,gen(quarter2)
+replace quarter2=substr("00"+quarter2,-2,2)
+gen yearqt=year2+quarter2
+drop year quarter year2 quarter2
+order stockid stockname yearqt date
+sort stockid yearqt
+
+rename asset ta
+label var ta "银行总资产"
+gen w1=interestexpense/deposit
+label var w1 "存款价格"
+gen w2=(noninterestexpense+adminexpense)/ta
+label var w2 "劳动力价格"
+order stockid stockname yearqt date tc ta w1 w2
+sort stockid
+merge m:1 stockid using stock_serialnumber
+drop _merge
+gen year=year(date)
+save comp,replace
+
+//计算Lerner指数
+use comp,clear
+sort stockid yearqt
+gen lntc=ln(tc)
+gen lnta=ln(ta)
+gen lnta2=[(ln(ta))^2]
+gen lnw1=ln(w1)
+gen lnw2=ln(w2)
+gen lntalnw1=ln(ta)*ln(w1)
+gen lntalnw2=ln(ta)*ln(w2)
+gen lnw12=[(ln(w1))^2]
+gen lnw22=[(ln(w2))^2]
+gen lnw1lnw2=ln(w1)*ln(w2)
+gen lnw2lnw1=ln(w2)*ln(w1)
+
+set more off
+cons def 1 lnw1+lnw2=1
+cons def 2 lntalnw1+lntalnw2=0
+cons def 3 lnw12+lnw1lnw2=0
+cons def 4 lnw22+lnw2lnw1=0
+cons def 5 lnw1lnw2=lnw2lnw1
+
+xi:cnsreg lntc lnta lnta2 lnw1 lnw2 lntalnw1 lntalnw2 lnw12 lnw1lnw2 lnw22 lnw2lnw1 i.year i.stock_serialnumber,c(1-5)
+outreg2 using tc_solve.doc,bdec(4) replace word
+
+matrix temp=e(b)
+forvalues i=1/6 {
+gen beta`i'=temp[1,`i']
+}
+gen mc=(tc/ta)*(beta1+2*beta2*lnta+beta5*lnw1+beta6*lnw2)
+gen p=revenue/ta
+gen lerner=(p-mc)/p
+save lerner,replace
+
+use lerner,clear
+keep stockid stockname yearqt stock_serialnumber lerner
+sort stockid yearqt
+save lerner_for_combine,replace
+
+//计算CR4和HHI
+use comp,clear
+sort stockid yearqt
+merge m:1 yearqt using comp5.dta
+drop if _merge==2
+drop _merge
+merge m:1 yearqt using comp6.dta
+keep if _merge==3
+drop _merge
+gen ta_p=ta/industry_asset
+gen deposit_p=deposit/industry_deposit
+gen loan_p=loan/industry_loan
+gen ta_2p=ta_p^2
+gen deposit_2p=deposit_p^2
+gen loan_2p=loan_p^2
+drop if stockname==""
+keep yearqt stock_serialnumber ta_p deposit_p loan_p ta_2p deposit_2p loan_2p
+save concentration.dta,replace
+
+use concentration,clear
+sort yearqt stock_serialnumber
+reshape wide ta_p deposit_p loan_p ta_2p deposit_2p loan_2p,i(yearqt) j(stock_serialnumber)
+order yearqt ta_p* deposit_p* loan_p*
+egen acr4=rowtotal(ta_p1 ta_p3 ta_p4 ta_p5),missing
+egen dcr4=rowtotal(deposit_p1 deposit_p3 deposit_p4 deposit_p5),missing
+egen lcr4=rowtotal(loan_p1 loan_p3 loan_p4 loan_p5),missing
+egen ahhi=rowtotal(ta_2p*),missing
+egen dhhi=rowtotal(deposit_2p*),missing
+egen lhhi=rowtotal(loan_2p*),missing
+keep yearqt *cr4 *hhi
+sort yearqt
+save concentration.dta,replace
+
+
+-------------------------------
+//计算H统计量
+use comp,clear
+sort stockid yearqt
+gen incomep=interestincome/ta
+label var incomep "贷款产出价格"
+drop w1
+gen w1=interestexpense/loan
+label var w1 "贷款投入价格"
+gen y1=equity/ta
+gen y2=loan/ta
+gen y3=ta
+
+gen lnip=ln(incomep)
+gen lnroa=ln(1+roa)
+gen lnw1=ln(w1)
+gen lnw2=ln(w2)
+gen lny1=ln(y1)
+gen lny2=ln(y2)
+gen lny3=ln(y3)
+
+set more off
+
+xi:reg lnip lnw1 lnw2 lny1 lny2 lny3 i.year i.stock_serialnumber
+outreg2 using h.doc,bdec(4) replace word
+matrix temp=e(b)
+forvalues i=1/5 {
+gen beta`i'=temp[1,`i']
+}
+gen h=beta1+beta2
+
+xi:reg lnroa lnw1 lnw2 lny1 lny2 lny3 i.year i.stock_serialnumber
+matrix temp=e(b)
+forvalues i=1/5 {
+gen beta_eq`i'=temp[1,`i']
+}
+gen h_eq=beta_eq1+beta_eq2
+save h,replace
+
+//HP滤波法
+
+webuse gdp2,clear
+tsfilter hp gdp_hp_cycle=gdp_ln,trend(gdp_hp_trend)
+tsline gdp_ln
+tsline gdp_hp_trend
+tsline gdp_hp_cycle

@@ -1,0 +1,167 @@
+//初始化银行监管指标
+insheet using bankregulation.csv,clear
+tostring stockid,replace
+replace stockid=substr("000000"+stockid,-9,6)
+tostring date,replace
+gen date2=date(date,"YMD")
+format date2 %td
+drop date
+rename date2 date
+label var date "日期"
+sort stockid date
+gen year=year(date)
+gen quarter=quarter(date)
+tostring year,gen(year2)
+tostring quarter,gen(quarter2)
+replace quarter2=substr("00"+quarter2,-2,2)
+gen yearqt=year2+quarter2
+drop date year year2 quarter*
+order stockid stockname yearqt
+label var provision_coverage "拨备覆盖率"
+label var loanlossreserve_loan "拨贷比"
+gen npl_rate=loanlossreserve_loan/provision_coverage
+gen npl=npl_rate*loan
+gen provision=loanlossreserve_loan*loan
+label var npl_rate "不良贷款率"
+label var npl "不良贷款"
+label var provision "贷款损失准备"
+sort stockid yearqt
+save regulation,replace
+
+//以DD_quarterly为基准，开始不断合并变量
+use DD_quarterly.dta,clear
+
+sort yearqt
+egen id=group(yearqt)
+sort id stock_serialnumber
+merge 1:1 id stock_serialnumber using rsquare
+keep if _merge==3
+drop _merge
+
+sort id stock_serialnumber
+merge 1:1 id stock_serialnumber using deltacovar
+keep if _merge==3
+drop _merge
+
+sort stockid yearqt
+merge 1:1 stockid yearqt using lerner_for_combine
+keep if _merge==3
+drop _merge
+
+sort stockid yearqt
+merge 1:1 stockid yearqt using nii.dta
+keep if _merge==3
+drop _merge
+drop loan deposit ltd
+
+sort yearqt
+merge m:1 yearqt using monetarypolicy.dta
+keep if _merge==3
+drop _merge
+
+sort yearqt
+merge m:1 yearqt using concentration.dta
+keep if _merge==3
+drop _merge
+
+sort stockid yearqt
+merge 1:1 stockid yearqt using regulation.dta
+drop if _merge==2
+save paneldata_temp,replace
+
+//补全银行监管指标数据
+use paneldata_temp,clear
+keep stockid date loan provision_coverage loanlossreserve_loan netcapital car core1_netcapital core1car rwa
+gsort stockid -date
+export excel using regulation_for_add.xlsx,replace firstrow(variables)
+
+insheet using regulation_add.csv,clear
+tostring stockid,replace
+replace stockid=substr("000000"+stockid,-6,6)
+tostring date,replace
+gen date2=date(date,"YMD")
+format date2 %td
+drop date
+rename date2 date
+label var date "日期"
+order date
+sort date
+gen year=year(date)
+gen quarter=quarter(date)
+tostring year,gen(year2)
+tostring quarter,gen(quarter2)
+replace quarter2=substr("00"+quarter2,-2,2)
+gen yearqt=year2+quarter2
+drop date year year2 quarter*
+order stockid yearqt
+
+gen npl_rate=loanlossreserve_loan/provision_coverage
+gen npl=npl_rate*loan
+gen provision=loanlossreserve_loan*loan
+gen regulation=1/car-1/0.08
+replace regulation=0 if car>=0.08
+label var provision_coverage "拨备覆盖率"
+label var loanlossreserve_loan "拨贷比"
+label var npl_rate "不良贷款率"
+label var npl "不良贷款"
+label var provision "贷款损失准备"
+label var regulation "资本监管压力"
+
+save regulation_add,replace
+
+
+
+//继续合并面板数据
+use paneldata_temp,clear
+drop loan provision_coverage loanlossreserve_loan netcapital car core1_netcapital core1car rwa npl_rate npl provision
+drop _merge
+sort stockid yearqt
+merge 1:1 stockid yearqt using regulation_add.dta
+keep if _merge==3
+drop _merge
+gen yearquarter=yq(year,quarter)
+format yearquarter %tq
+order stockid stockname year quarter yearquarter yearqt
+rename npl npl_amount
+rename npl_rate npl
+rename rwa rwa_amount
+gen rwa=rwa_amount/asset
+save paneldata,replace
+
+//描述性统计
+use paneldata,clear
+foreach v of varlist add wdd pdd rsquare deltacovar lerner acr4 ahhi rr m2_growth interbank_rate igap lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle {
+rename `v' `v'2
+winsor `v'2, gen(`v') p(0.01)
+drop `v'2
+}
+set more off
+sum pdd rsquare deltacovar lerner acr4 ahhi rr m2_growth interbank_rate igap lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle
+sum pdd rsquare deltacovar lerner acr4 ahhi rr m2_growth interbank_rate igap lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle,detail
+
+sort year yearqt stockid
+by year,sort:egen yearcount=count(year)
+duplicates drop year,force
+keep year yearcount
+
+pwcorr pdd rsquare deltacovar lerner acr4 ahhi rr m2_growth interbank_rate igap lnta mvtbv provision_coverage npl rwa nii regulation gdp_growth trade_p cycle,sig
+
+
+sort yearqt
+by yearqt,sort:egen pdd_mean=mean(pdd)
+by yearqt,sort:egen lrsq_mean=mean(rsquare)
+by yearqt,sort:egen deltacovar_mean=mean(deltacovar)
+by yearqt,sort:egen lerner_mean=mean(lerner)
+by yearqt,sort:egen cr4_mean=mean(acr4)
+by yearqt,sort:egen hhi_mean=mean(ahhi)
+duplicates drop yearqt,force
+keep year quarter yearquarter yearqt pdd_mean lrsq_mean deltacovar_mean lerner_mean cr4_mean hhi_mean rr m2_growth interbank_rate igap
+line pdd_mean yearquarter||line lerner_mean yearquarter,yaxis(2) 
+line lrsq_mean yearquarter||line lerner_mean yearquarter,yaxis(2)
+line deltacovar_mean yearquarter||line lerner_mean yearquarter,yaxis(2)
+line rr yearquarter||line m2_growth yearquarter||line interbank_rate yearquarter||line igap yearquarter||line lerner_mean yearquarter,yaxis(2) 
+ 
+line svi_avg dif,xtitle("Day") ytitle("Cross-Section of Average SVI") xlabel(-15(5)15) xline(0)
+
+
+

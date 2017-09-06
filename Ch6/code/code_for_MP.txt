@@ -1,0 +1,147 @@
+//初始化宏观变量
+insheet using inflation.csv,clear
+tostring date,replace
+gen date2=date(date,"YMD")
+format date2 %td
+drop date
+rename date2 date
+label var date "日期"
+order date
+sort date
+save inflation,replace
+
+insheet using trade.csv,clear
+tostring date,replace
+gen date2=date(date,"YMD")
+format date2 %td
+drop date
+rename date2 date
+label var date "日期"
+order date
+sort date
+save trade,replace
+
+insheet using m2.csv,clear
+tostring date,replace
+gen date2=date(date,"YMD")
+format date2 %td
+drop date
+rename date2 date
+label var date "日期"
+order date
+sort date
+save trade,replace
+
+insheet using rr.csv,clear
+tostring date,replace
+gen date2=date(date,"YMD")
+format date2 %td
+drop date
+rename date2 date
+label var date "日期"
+order date
+sort date
+save trade,replace
+
+insheet using interbankrate.csv,clear
+tostring date,replace
+gen date2=date(date,"YMD")
+format date2 %td
+drop date
+rename date2 date
+label var date "日期"
+order date
+sort date
+save trade,replace
+
+//初始化GDP数据并采用HP滤波法得到trend和cycle
+insheet using gdp.csv,clear
+tostring date,replace
+gen date2=date(date,"YMD")
+gen year2=year(date2)
+gen quarter2=quarter(date2)
+gen quarter=yq(year2,quarter2)
+format date2 %td
+format quarter %tq
+drop date year2 quarter2
+rename date2 date
+label var date "日期"
+order date quarter
+tsset quarter
+gen lngdp=ln(gdp)
+tsfilter hp gdp_hp_cycle=gdp,smooth(1600) trend(gdp_hp_trend)
+tsfilter hp lngdp_hp_cycle=lngdp,smooth(1600) trend(lngdp_hp_trend)
+save gdp,replace
+//
+
+//合并宏观变量
+use gdp,clear
+merge 1:1 date using inflation.dta
+drop _merge
+merge 1:1 date using trade.dta
+drop _merge
+merge 1:1 date using m2.dta
+drop _merge
+merge 1:1 date using rr.dta
+drop _merge
+merge 1:1 date using interbankrate.dta
+drop if _merge==2
+drop _merge
+save macro_temp,replace
+
+//补全银行间拆借利率季度数据
+use macro_temp,clear
+keep date interbank_rate
+gsort -date
+export excel using interbankrate_yearqt_add.xlsx,replace firstrow(variables)
+
+insheet using interbankrate_yearqt_add.csv,clear
+tostring date,replace
+drop if date=="."
+gen date2=date(date,"YMD")
+format date2 %td
+drop date
+rename date2 date
+label var date "日期"
+order date
+sort date
+save interbankrate_yearqt_add,replace
+
+//继续合并宏观变量
+use macro_temp,clear
+drop interbank_rate
+merge 1:1 date using interbankrate_yearqt_add.dta
+drop _merge
+gen trade_p=trade/gdp
+save macro,replace
+
+//计算泰勒规则下的IGAP
+use macro,clear
+global rate_equilibrium=0.01
+global inflation_target=0.02
+global inflation_gap_weight=0.05
+global gdp_gap_weight=0.05
+
+gen rate_target=$rate_equilibrium+inflation+$inflation_gap_weight*(inflation-$inflation_target)+$gdp_gap_weight*lngdp_hp_cycle
+
+gen igap=interbank_rate-inflation-rate_target
+
+drop inflation trade m2 dm2
+drop if rr==.
+order date quarter igap rr m2_growth interbank_rate
+gen cycle=1 if lngdp_hp_cycle>0
+replace cycle=0 if lngdp_hp_cycle<0
+sort date
+
+rename quarter yearquarter
+gen year=year(date)
+gen quarter=quarter(date)
+tostring year,gen(year2)
+tostring quarter,gen(quarter2)
+replace quarter2=substr("00"+quarter2,-2,2)
+gen yearqt=year2+quarter2
+drop year quarter year2 quarter2 yearquarter date
+order yearqt
+sort yearqt
+
+save monetarypolicy,replace
