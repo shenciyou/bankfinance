@@ -1,0 +1,349 @@
+/*银行股价数据分股导出（STATA预处理）*/
+use bankdata,clear
+keep date stock_serialnumber return
+sort date stock_serialnumber
+reshape wide return,i(date) j(stock_serialnumber)
+sort date
+save dailyreturn_by_stock,replace
+export excel using bankstock_return.xls,replace firstrow(variables)
+
+/*初始化市场指数数据并导出（STATA预处理）*/
+insheet using stockindex.csv,clear
+tostring stockid,replace
+replace stockid=substr("000000"+stockid,-9,6)
+tostring date,replace
+gen date2=date(date,"YMD")
+format date2 %td
+drop date
+rename date2 date
+label var date "日期"
+gen year=year(date)
+gen month=month(date)
+gen quarter=quarter(date)
+order stockid stockname date year quarter month
+gen market_return=(close-lag_close)/lag_close
+keep date market_return
+drop if date==.
+save indexdata,replace
+export excel using stockindex_return.xls,replace firstrow(variables)
+
+/*收益率数据合并（STATA处理）*/
+use dailyreturn_by_stock,clear
+merge 1:1 date using indexdata.dta
+keep if _merge==3
+drop _merge
+save bankreturn,replace
+
+
+/*TGARCH过程-提取标准化残差（STATA处理）*/
+use dailyreturn_by_stock,clear
+sort date
+tsset date
+forvalues i=1/16 {
+egen return_mean`i'=mean(return`i')
+gen return_demean`i'=return`i'-return_mean`i'
+arch return_demean`i', arch(1) garch(1) tarch(1)
+predict ht`i',variance
+predict et`i',residual
+gen zt`i'=et`i'/sqrt(ht`i')
+}
+save tarch_by_stock,replace
+
+use indexdata,clear
+sort date
+tsset date
+egen mreturn_mean=mean(market_return)
+gen mreturn_demean=market_return-mreturn_mean
+arch mreturn_demean, arch(1) garch(1) tarch(1)
+predict hmt,variance
+predict emt,residual
+gen zmt=emt/sqrt(hmt)
+save tarch_index,replace
+
+use tarch_by_stock,clear
+merge 1:1 date using tarch_index.dta
+keep if _merge==3
+drop _merge
+save tarch_results,replace
+
+use tarch_results,clear
+keep date zt* zmt
+save tarch_zts,replace
+export excel using tarch_zts.xls,replace firstrow(variables)
+
+
+
+/*TGARCH过程-提取标准化残差-分散文件（STATA处理）*/
+use tarch_zts,clear
+forvalues i=1/16 {
+sort date
+tsset date
+keep date zt`i' zmt
+drop if zt`i'==.
+drop if zmt==.
+export excel using tarch_zts_`i'.xls,replace firstrow(variables)
+use tarch_zts,clear
+}
+
+%%DCC-GARCH过程（Matlab处理）
+clear
+
+
+for i=1:1:16
+dccP=1;
+dccQ=1;
+archP=1;
+garchQ=1;
+eval(['zts=xlsread(''tarch_zts_',num2str(i),'.xls'',''Sheet1'',''B2:C10000'');']);
+data(:,1)=zts(:,1);
+data(:,2)=zts(:,2);
+N=size(data);
+rowscount=N(1);
+[parameters, loglikelihood, Ht, Qt,  likelihoods, stdresid, stderrors, A,B, jointscores]=dcc_mvgarch(data,dccP,dccQ,archP,garchQ);
+hii_temp=Ht(1,1,:);
+hii=reshape(hii_temp,rowscount,1);
+him_temp=Ht(1,2,:);
+him=reshape(him_temp,rowscount,1);
+hmm_temp=Ht(2,2,:);
+hmm=reshape(hmm_temp,rowscount,1);
+pim=him./(sqrt(hii).*sqrt(hmm));
+
+
+
+eval(['xlswrite(''tarch_zts_',num2str(i),'.xls'', {''hii''} ,''Sheet1'',''D1'');']);
+eval(['xlswrite(''tarch_zts_',num2str(i),'.xls'', {''him''} ,''Sheet1'',''E1'');']);
+eval(['xlswrite(''tarch_zts_',num2str(i),'.xls'', {''hmm''} ,''Sheet1'',''F1'');']);
+eval(['xlswrite(''tarch_zts_',num2str(i),'.xls'', {''pim''} ,''Sheet1'',''G1'');']);
+
+
+eval(['xlswrite(''tarch_zts_',num2str(i),'.xls'', hii,''Sheet1'',''D2'');']);
+eval(['xlswrite(''tarch_zts_',num2str(i),'.xls'', him,''Sheet1'',''E2'');']);
+eval(['xlswrite(''tarch_zts_',num2str(i),'.xls'', hmm,''Sheet1'',''F2'');']);
+eval(['xlswrite(''tarch_zts_',num2str(i),'.xls'', pim,''Sheet1'',''G2'');']);
+
+clearvars -EXCEPT i
+end
+
+/*独立残差计算过程（STATA处理）*/
+forvalues i=1/16 {
+import excel tarch_zts_`i'.xls,firstrow clear
+format date %td
+sort date
+rename zt`i' zit_`i'
+rename zmt zmt_`i'
+rename hii hii_`i'
+rename him him_`i'
+rename hmm hmm_`i'
+rename pim pim_`i'
+save tarch_zts_`i',replace
+
+use tarch_results,clear
+keep date return_demean`i' mreturn_demean
+sort date
+merge 1:1 date using tarch_zts_`i'.dta
+keep if _merge==3
+drop _merge
+
+gen year=year(date)
+gen quarter=quarter(date)
+tostring year,gen(year2)
+tostring quarter,gen(quarter2)
+replace quarter2=substr("00"+quarter2,-2,2)
+gen yearqt=year2+quarter2
+drop year quarter year2 quarter2
+sort yearqt date
+egen id_yqt=group(yearqt)
+
+gen emt_`i'=mreturn_demean/sqrt(hmm_`i')
+gen eit_`i'=return_demean`i'/sqrt(hii_`i')
+gen xit_`i'=(eit_`i'-pim_`i'*emt_`i')/sqrt(1-pim_`i'^2)
+
+save tarch_zts_`i',replace
+
+use tarch_zts_`i',clear
+sort date
+gen id=_n
+tsset id
+gen sigmahii_`i'=sqrt(hii_`i')
+gen lag_sigmahii_`i'=l.sigmahii_`i'
+
+egen critical_`i'=pctile(mreturn_demean),p(5)
+gen condition_`i'=.
+gen right_hand_`i'=critical_`i'/sqrt(hmm_`i')
+replace condition_`i'=1 if emt_`i'<right_hand_`i'
+gen mes_`i'=-lag_sigmahii_`i'*eit_`i' if condition_`i'==1
+save tarch_zts_`i',replace
+export excel using tarch_zts_`i'_fill.xls,replace firstrow(variables)
+}
+
+
+%%MES填充和写入过程（Matlab处理）
+clear
+
+for i=1:16
+
+eval(['filldata=xlsread(''tarch_zts_',num2str(i),'_fill.xls'',''Sheet1'',''B2:U10000'');']);
+
+rows= find(filldata(:,18)==1)
+
+for j=1:rows(1)-1
+k=rows(1)-j;
+filldata(k,20)=filldata(k+1,20)*filldata(k+1,16)/filldata(k+1,15);
+end
+
+for n=2:size(rows)
+for j=rows(n-1)+1:rows(n)-1
+k=rows(n-1)+rows(n)-j;
+filldata(k,20)=filldata(k+1,20)*filldata(k+1,16)/filldata(k+1,15);
+end
+end
+
+eval(['xlswrite(''tarch_zts_',num2str(i),'_fill.xls'', filldata(:,20),''Sheet1'',''U2'');']);
+
+clearvars -EXCEPT i
+end
+
+
+
+/*MES文件合并生成MES数据集（STATA处理）*/
+clear
+forvalues i=1/16 {
+import excel tarch_zts_`i'_fill.xls,firstrow clear
+format date %td
+sort date
+drop yearqt id_yqt id mreturn_demean
+save tarch_zts_`i'_ok,replace
+}
+
+use tarch_zts_6_ok,clear
+merge 1:1 date using tarch_zts_1_ok.dta
+drop _merge
+merge 1:1 date using tarch_zts_2_ok.dta
+drop _merge
+merge 1:1 date using tarch_zts_3_ok.dta
+drop _merge
+merge 1:1 date using tarch_zts_4_ok.dta
+drop _merge
+merge 1:1 date using tarch_zts_5_ok.dta
+drop _merge
+merge 1:1 date using tarch_zts_7_ok.dta
+drop _merge
+merge 1:1 date using tarch_zts_8_ok.dta
+drop _merge
+merge 1:1 date using tarch_zts_9_ok.dta
+drop _merge
+merge 1:1 date using tarch_zts_10_ok.dta
+drop _merge
+merge 1:1 date using tarch_zts_11_ok.dta
+drop _merge
+merge 1:1 date using tarch_zts_12_ok.dta
+drop _merge
+merge 1:1 date using tarch_zts_13_ok.dta
+drop _merge
+merge 1:1 date using tarch_zts_14_ok.dta
+drop _merge
+merge 1:1 date using tarch_zts_15_ok.dta
+drop _merge
+merge 1:1 date using tarch_zts_16_ok.dta
+drop _merge
+merge 1:1 date using tarch_zts_1_ok.dta
+drop _merge
+save tarch_zts_ok,replace
+
+use tarch_zts_ok,clear
+keep date hii_* pim_* mes_*
+order date hii_1 hii_2 hii_3 hii_4 hii_5 hii_6 hii_7 hii_8 hii_9 hii_10 hii_11 hii_12 hii_13 hii_14 hii_15 hii_16 pim_1 pim_2 pim_3 pim_4 pim_5 pim_6 pim_7 pim_8 pim_9 pim_10 pim_11 pim_12 pim_13 pim_14 pim_15 pim_16 mes_1 mes_2 mes_3 mes_4 mes_5 mes_6 mes_7 mes_8 mes_9 mes_10 mes_11 mes_12 mes_13 mes_14 mes_15 mes_16 
+forvalues i=1/16 {
+rename hii_`i' hii`i'
+rename pim_`i' pim`i'
+rename mes_`i' mes`i'
+}
+sort date
+gen year=year(date)
+gen quarter=quarter(date)
+tostring year,gen(year2)
+tostring quarter,gen(quarter2)
+replace quarter2=substr("00"+quarter2,-2,2)
+gen yearqt=year2+quarter2
+drop year quarter year2 quarter2
+order date yearqt
+save mes_ok,replace
+
+
+use mes_ok,clear
+sort yearqt date
+reshape long hii pim mes,i(date) j(stock_serialnumber)
+sort stock_serialnumber yearqt date
+order stock_serialnumber yearqt date
+replace hii=-hii if hii<0
+replace pim=-pim if pim<0
+replace mes=-mes if mes<0
+save mes_dynamic,replace
+
+/*导入杠杆率数据（STATA处理）*/
+use leverage,clear
+gen ln_e=ln(equity)
+gen ln_d=ln(liability)
+gen leverage_dynamic=1/eta
+sort stock_serialnumber yearqt date
+keep stockid stockname banktype stock_serialnumber yearqt ln_e ln_d leverage_dynamic
+order stockid stockname banktype stock_serialnumber yearqt ln_e ln_d leverage_dynamic
+save leverage_for_merge,replace
+
+/*生成MES和SES的数据集（STATA处理）*/
+use mes_dynamic,clear
+merge m:1 stock_serialnumber yearqt using leverage_for_merge.dta
+keep if _merge==3
+drop _merge
+order stockid stockname yearqt stock_serialnumber
+gen cap=0.08
+gen ses=cap*ln_d-(1-cap)*ln_e*(1-mes)
+gen srisk=abs(ses)
+drop if ses==.
+save ses_dynamic,replace
+
+/*生成SRISK排序数据集（STATA处理）*/
+use ses_dynamic,clear
+sort stockid yearqt date 
+egen id_yqt=group(stockid yearqt)
+by id_yqt,sort:egen srisk_quarterly=mean(srisk)
+duplicates drop id_yqt,force
+drop id_yqt
+sort yearqt stockid
+egen id_yqt=group(yearqt)
+by id_yqt,sort:egen srisk_sum=sum(srisk_quarterly)
+by id_yqt,sort:gen srisk_p=100*srisk_quarterly/srisk_sum
+gsort yearqt -srisk_p
+by id_yqt,sort:gen rank=_n
+save srisk_p,replace
+
+/*导出SRISK排序数据集（STATA处理，给EXCEL备用）*/
+use srisk_p,clear
+keep stockid stockname yearqt stock_serialnumber banktype id_yqt srisk_p rank
+destring yearqt,gen(yearqt2)
+gen year=int(yearqt2/100)
+keep if year>=2007
+drop if yearqt=="200701"
+keep if rank>=1 & rank<=10
+
+sort yearqt rank
+keep yearqt stockname srisk_p rank stock_serialnumber
+reshape wide stock_serialnumber stockname srisk_p,i(yearqt) j(rank)
+sort yearqt
+save srisk_results,replace
+export excel using srisk_results.xls,replace firstrow(variables)
+
+/*导出SRISK排序数据集（STATA处理，给EXCEL备用）*/
+use srisk_p,clear
+keep stockid stockname yearqt stock_serialnumber banktype id_yqt srisk_p rank
+destring yearqt,gen(yearqt2)
+gen year=int(yearqt2/100)
+keep if year>=2007
+drop if yearqt=="200701"
+
+sort yearqt stock_serialnumber
+keep yearqt stockname srisk_p rank stock_serialnumber
+reshape wide stockname rank srisk_p,i(yearqt) j(stock_serialnumber)
+sort yearqt
+save srisk_results_2,replace
+export excel using srisk_results2.xls,replace firstrow(variables)

@@ -1,0 +1,144 @@
+/*初始化银行股价数据*/
+insheet using bankstock.csv,clear
+tostring stockid,replace
+replace stockid=substr("000000"+stockid,-9,6)
+tostring date,replace
+gen date2=date(date,"YMD")
+format date2 %td
+drop date
+rename date2 date
+label var date "日期"
+gen year=year(date)
+gen month=month(date)
+gen quarter=quarter(date)
+order stockid stockname date year quarter month
+gen banktype=.
+replace banktype=1 if stockid=="601398"|stockid=="601288"|stockid=="601988"|stockid=="601939"|stockid=="601328"
+replace banktype=2 if stockid=="601818"|stockid=="000001"|stockid=="600015"|stockid=="600016"|stockid=="600000"|stockid=="601166"|stockid=="600036"|stockid=="601998"
+replace banktype=3 if stockid=="601169"|stockid=="601009"|stockid=="002142"
+gen return=(close-lag_close)/lag_close
+
+
+sort stockid date
+egen id_stockid_date=group(stockid date)
+duplicates drop id_stockid_date,force
+
+merge m:1 stockid using stock_serialnumber.dta
+keep if _merge==3
+drop _merge
+sort stockid date
+save bankdata,replace
+
+
+
+
+/*季度MES求解*/
+use bankdata,clear
+sort stockid year quarter date
+egen id=group(stockid)
+egen id_stockid_yqt=group(stockid year quarter)
+tostring year,gen(year2)
+tostring quarter,gen(quarter2)
+replace quarter2=substr("00"+quarter2,-2,2)
+gen yearqt=year2+quarter2
+drop year2 quarter2
+
+by id_stockid_yqt,sort:cumul return,gen(quantile_quarter)
+gen mes_window_quarter=1 if quantile_quarter<=0.05
+by id_stockid_yqt,sort:egen mes_temp=mean(return) if mes_window_quarter==1
+by id_stockid_yqt,sort:egen mes_quarter_2=mean(mes_temp)
+gen mes_quarter=-mes_quarter_2
+drop mes_temp mes_quarter_2
+save mes_quarter,replace
+
+/*MES季度数据导出*/
+use mes_quarter,clear
+keep stockid yearqt mes_quarter id_stockid_yqt
+duplicates drop id_stockid_yqt,force
+merge m:1 stockid using stock_serialnumber.dta
+keep if _merge==3
+drop _merge
+keep yearqt mes_quarter stock_serialnumber
+order yearqt stock_serialnumber mes_quarter
+sort yearqt stock_serialnumber mes_quarter 
+reshape wide mes_quarter,i(yearqt) j(stock_serialnumber)
+sort yearqt
+destring yearqt,gen(yearqt2)
+gen year=int(yearqt2/100)
+keep if year>=2007 & year<=2010
+save mes_quarter_by_stock,replace
+export excel using MES_quarterly_bystock.xls,replace firstrow(variables)
+
+
+/*MES求解*/
+use mes_quarter,clear
+gen mes_window=1 if year>=2009 & year<=2010
+keep if mes_window==1
+by id,sort:cumul return,gen(quantile)
+gen mes_window_target=1 if quantile<=0.05
+by id,sort:egen mes_temp=mean(return) if mes_window_target==1
+by id,sort:egen mes_2=mean(mes_temp)
+gen mes=-mes_2
+drop mes_temp mes_2
+keep stockid mes
+duplicates drop stockid,force
+sort stockid
+save mes,replace
+
+use mes_quarter,clear
+sort stockid date
+merge m:1 stockid using mes.dta
+keep if _merge==3
+drop _merge
+sort stockid yearqt date
+save mes,replace
+
+
+/*初始化杠杆率*/
+use nii2,clear
+gen liability=asset-equity
+gen year=year(date)
+gen quarter=quarter(date)
+tostring year,gen(year2)
+tostring quarter,gen(quarter2)
+replace quarter2=substr("00"+quarter2,-2,2)
+gen yearqt=year2+quarter2
+drop year2 quarter2
+sort stockid yearqt
+merge m:1 stockid using stock_serialnumber.dta
+keep if _merge==3
+drop _merge
+save leverage,replace
+
+/*SES求解*/
+use mes,clear
+merge m:1 stockid yearqt using leverage.dta
+keep if _merge==3
+drop _merge
+gen leverage_original=1/eta
+gen ses_window=1 if year==2008
+by id,sort:egen ses_temp=mean(return) if ses_window==1
+by id,sort:egen ses=mean(ses_temp)
+by id,sort:egen leverage_temp=mean(leverage_original) if ses_window==1
+by id,sort:egen leverage=mean(leverage_temp)
+drop ses_temp leverage_temp
+save mes,replace
+
+
+/*回归分析*/
+use mes,clear
+keep stockid yearqt mes ses leverage stock_serialnumber
+duplicates drop stockid,force
+drop if ses==.
+drop yearqt
+sort stock_serialnumber
+export excel using SES_MES_static.xls,replace firstrow(variables)
+sum ses mes leverage
+
+reg ses mes,rob
+est store OLS1
+reg ses leverage,rob
+est store OLS2
+reg ses mes leverage,rob
+est store OLS3
+outreg2 [OLS1 OLS2 OLS3] using reg_mes.doc,bdec(4) replace word

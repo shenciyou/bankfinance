@@ -1,0 +1,326 @@
+/*日度DD数据描述性统计*/
+use DD_daily,clear
+sum dd
+bysort banktype:sum dd
+sort banktype stock_serialnumber date
+export excel using DD_daily.xls,replace firstrow(variables)
+
+use DD_daily,clear
+keep date stock_serialnumber dd
+sort date stock_serialnumber
+reshape wide dd,i(date) j(stock_serialnumber)
+sort date
+save dailydd_by_stock,replace
+export excel using DD_daily_bystock.xls,replace firstrow(variables)
+
+use stock_serialnumber,clear
+
+use DD_daily,clear
+sort banktype date stockid
+duplicates drop id_banktype_date,force
+keep date stock_serialnumber dd add add_all banktype
+keep date banktype add add_all
+sort date banktype
+reshape wide add add_all,i(date) j(banktype)
+rename add_all2 add_all
+drop add_all1 add_all3
+order date add1 add2 add3 add_all
+sort date
+save dailydd_by_banktype,replace
+
+
+use dailydd_by_stock,clear
+merge 1:1 date using dailydd_by_banktype.dta
+drop _merge
+save dailydd_by_stockandbanktype,replace
+export excel using DD_daily_bystockandbanktype.xls,replace firstrow(variables)
+
+/*季度DD数据描述性统计*/
+use DD_quarterly,clear
+sum dd
+bysort banktype:sum dd
+sort banktype stock_serialnumber date
+export excel using DD_quarterly.xls,replace firstrow(variables)
+
+use DD_quarterly,clear
+keep date stock_serialnumber dd
+sort date stock_serialnumber
+reshape wide dd,i(date) j(stock_serialnumber)
+sort date
+save quarterlydd_by_stock,replace
+export excel using DD_quarterly_bystock.xls,replace firstrow(variables)
+
+use stock_serialnumber,clear
+
+use DD_quarterly,clear
+sort banktype yearqt stockid
+duplicates drop id_banktype_yqt,force
+keep date stock_serialnumber dd add add_all banktype
+keep banktype date add add_all
+sort date banktype
+reshape wide add add_all,i(date) j(banktype)
+rename add_all2 add_all
+drop add_all1 add_all3
+order date add1 add2 add3 add_all
+sort date
+save quarterlydd_by_banktype,replace
+
+
+use quarterlydd_by_stock,clear
+merge 1:1 date using quarterlydd_by_banktype.dta
+drop _merge
+save quarterlydd_by_stockandbanktype,replace
+export excel using DD_quarterly_bystockandbanktype.xls,replace firstrow(variables)
+
+
+/*季度LRSQ数据描述性统计*/
+use DD_quarterly.dta,clear
+
+sort yearqt
+egen id=group(yearqt)
+sort id stock_serialnumber
+merge 1:1 id stock_serialnumber using rsquare
+keep if _merge==3
+drop _merge
+by id_banktype_yqt,sort:egen rsquare_banktype=mean(rsquare)
+by id_bankall_yqt,sort:egen rsquare_all=mean(rsquare)
+
+save rsquare_for_ds,replace
+
+
+sum rsquare
+bysort banktype:sum rsquare
+sort banktype stock_serialnumber date
+
+
+
+use rsquare_for_ds,clear
+keep date stock_serialnumber rsquare
+sort date stock_serialnumber
+reshape wide rsquare,i(date) j(stock_serialnumber)
+sort date
+save quarterlyrsquare_by_stock,replace
+export excel using LRSQ_quarterly_bystock.xls,replace firstrow(variables)
+
+use stock_serialnumber,clear
+
+
+use rsquare_for_ds,clear
+sort banktype yearqt stockid
+duplicates drop id_banktype_yqt,force
+keep date stock_serialnumber rsquare rsquare_banktype rsquare_all banktype
+keep date banktype rsquare_banktype rsquare_all
+sort date banktype
+reshape wide rsquare_banktype rsquare_all,i(date) j(banktype)
+rename rsquare_all2 rsquare_all
+drop rsquare_all1 rsquare_all3
+order date rsquare_banktype1 rsquare_banktype2 rsquare_banktype3 rsquare_all
+sort date
+save quarterlyrsquare_by_banktype,replace
+
+
+use quarterlyrsquare_by_stock,clear
+merge 1:1 date using quarterlyrsquare_by_banktype.dta
+drop _merge
+save quarterlyrsquare_by_stockandbanktype,replace
+export excel using LRSQ_quarterly_bystockandbanktype.xls,replace firstrow(variables)
+
+/*季度DeltaCoVaR数据描述性统计*/
+use DD_quarterly.dta,clear
+
+sort yearqt
+egen id=group(yearqt)
+sort id stock_serialnumber
+merge 1:1 id stock_serialnumber using deltacovar
+keep if _merge==3
+drop _merge
+by id_banktype_yqt,sort:egen deltacovar_banktype=mean(deltacovar)
+by id_bankall_yqt,sort:egen deltacovar_all=mean(deltacovar)
+
+save deltacovar_for_ds,replace
+
+
+sum deltacovar
+bysort banktype:sum deltacovar
+sort banktype stock_serialnumber date
+
+
+
+use deltacovar_for_ds,clear
+keep date stock_serialnumber deltacovar
+sort date stock_serialnumber
+reshape wide deltacovar,i(date) j(stock_serialnumber)
+sort date
+save quarterlydeltacovar_by_stock,replace
+export excel using DeltaCoVaR_quarterly_bystock.xls,replace firstrow(variables)
+
+use stock_serialnumber,clear
+
+
+use deltacovar_for_ds,clear
+sort banktype yearqt stockid
+duplicates drop id_banktype_yqt,force
+keep date stock_serialnumber deltacovar deltacovar_banktype deltacovar_all banktype
+keep date banktype deltacovar_banktype deltacovar_all
+sort date banktype
+reshape wide deltacovar_banktype deltacovar_all,i(date) j(banktype)
+rename deltacovar_all2 deltacovar_all
+drop deltacovar_all1 deltacovar_all3
+order date deltacovar_banktype1 deltacovar_banktype2 deltacovar_banktype3 deltacovar_all
+sort date
+save quarterlydeltacovar_by_banktype,replace
+
+
+use quarterlydeltacovar_by_stock,clear
+merge 1:1 date using quarterlydeltacovar_by_banktype.dta
+drop _merge
+save quarterlydeltacovar_by_stockandbanktype,replace
+export excel using DeltaCoVaR_quarterly_bystockandbanktype.xls,replace firstrow(variables)
+
+/*日度MES数据描述性统计*/
+%%hii
+use ses_dynamic,clear
+
+keep date stock_serialnumber hii
+sort date stock_serialnumber
+reshape wide hii,i(date) j(stock_serialnumber)
+sort date
+save dailyhii_by_stock,replace
+export excel using hii_daily_bystock.xls,replace firstrow(variables)
+
+
+use ses_dynamic,clear
+sort banktype date stockid
+egen id_banktype_date=group(banktype date)
+by id_banktype_date,sort:egen hii_banktype=mean(hii)
+sort date stockid
+egen id_date=group(date)
+by id_date,sort:egen hii_all=mean(hii)
+duplicates drop id_banktype_date,force
+keep date banktype hii_banktype hii_all
+sort date banktype
+reshape wide hii_banktype hii_all,i(date) j(banktype)
+rename hii_all2 hii_all
+drop hii_all1 hii_all3
+order date hii_banktype1 hii_banktype2 hii_banktype3 hii_all
+sort date
+save dailyhii_by_banktype,replace
+
+
+use dailyhii_by_stock,clear
+merge 1:1 date using dailyhii_by_banktype.dta
+drop _merge
+save dailyhii_by_stockandbanktype,replace
+export excel using hii_daily_bystockandbanktype.xls,replace firstrow(variables)
+
+
+
+%%pim
+use ses_dynamic,clear
+
+keep date stock_serialnumber pim
+sort date stock_serialnumber
+reshape wide pim,i(date) j(stock_serialnumber)
+sort date
+save dailypim_by_stock,replace
+export excel using pim_daily_bystock.xls,replace firstrow(variables)
+
+
+use ses_dynamic,clear
+sort banktype date stockid
+egen id_banktype_date=group(banktype date)
+by id_banktype_date,sort:egen pim_banktype=mean(pim)
+sort date stockid
+egen id_date=group(date)
+by id_date,sort:egen pim_all=mean(pim)
+duplicates drop id_banktype_date,force
+keep date banktype pim_banktype pim_all
+sort date banktype
+reshape wide pim_banktype pim_all,i(date) j(banktype)
+rename pim_all2 pim_all
+drop pim_all1 pim_all3
+order date pim_banktype1 pim_banktype2 pim_banktype3 pim_all
+sort date
+save dailypim_by_banktype,replace
+
+
+use dailypim_by_stock,clear
+merge 1:1 date using dailypim_by_banktype.dta
+drop _merge
+save dailypim_by_stockandbanktype,replace
+export excel using pim_daily_bystockandbanktype.xls,replace firstrow(variables)
+
+
+
+
+%%mes
+use ses_dynamic,clear
+
+keep date stock_serialnumber mes
+sort date stock_serialnumber
+reshape wide mes,i(date) j(stock_serialnumber)
+sort date
+save dailymes_by_stock,replace
+export excel using mes_daily_bystock.xls,replace firstrow(variables)
+
+
+use ses_dynamic,clear
+sort banktype date stockid
+egen id_banktype_date=group(banktype date)
+by id_banktype_date,sort:egen mes_banktype=mean(mes)
+sort date stockid
+egen id_date=group(date)
+by id_date,sort:egen mes_all=mean(mes)
+duplicates drop id_banktype_date,force
+keep date banktype mes_banktype mes_all
+sort date banktype
+reshape wide mes_banktype mes_all,i(date) j(banktype)
+rename mes_all2 mes_all
+drop mes_all1 mes_all3
+order date mes_banktype1 mes_banktype2 mes_banktype3 mes_all
+sort date
+save dailymes_by_banktype,replace
+
+
+use dailymes_by_stock,clear
+merge 1:1 date using dailymes_by_banktype.dta
+drop _merge
+save dailymes_by_stockandbanktype,replace
+export excel using mes_daily_bystockandbanktype.xls,replace firstrow(variables)
+
+
+
+%%ses
+use ses_dynamic,clear
+
+keep date stock_serialnumber ses
+sort date stock_serialnumber
+reshape wide ses,i(date) j(stock_serialnumber)
+sort date
+save dailyses_by_stock,replace
+export excel using ses_daily_bystock.xls,replace firstrow(variables)
+
+
+use ses_dynamic,clear
+sort banktype date stockid
+egen id_banktype_date=group(banktype date)
+by id_banktype_date,sort:egen ses_banktype=mean(ses)
+sort date stockid
+egen id_date=group(date)
+by id_date,sort:egen ses_all=mean(ses)
+duplicates drop id_banktype_date,force
+keep date banktype ses_banktype ses_all
+sort date banktype
+reshape wide ses_banktype ses_all,i(date) j(banktype)
+rename ses_all2 ses_all
+drop ses_all1 ses_all3
+order date ses_banktype1 ses_banktype2 ses_banktype3 ses_all
+sort date
+save dailyses_by_banktype,replace
+
+
+use dailyses_by_stock,clear
+merge 1:1 date using dailyses_by_banktype.dta
+drop _merge
+save dailyses_by_stockandbanktype,replace
+export excel using ses_daily_bystockandbanktype.xls,replace firstrow(variables)
